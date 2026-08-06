@@ -3,11 +3,31 @@ import React,{useState} from 'react'
 import {SafeAreaView} from 'react-native-safe-area-context'
 import LoginScreenLogo from '../assets/LoginScreen.png'
 import { useNavigation } from '@react-navigation/native'
+import axios from 'axios'
+import { BACKEND_URI } from '../config/env'
 const {width,height}=Dimensions.get('window');
 const Login = () => {
     const navigation=useNavigation();
     const [email,setemail]=useState('');
     const [password,setpassword]=useState('');
+    const handle=async ()=>{
+        if(email.trim()===''||password.trim()===''){
+            alert('Need all fields to be filled');
+            return;
+        }
+        try{
+            const res= await axios.post(BACKEND_URI+'api/auth/login',{
+                email:email,
+                password:password
+            });
+            console.log(res.data);
+            
+        }
+        catch(error){
+            console.log('Error in login:', error);
+            alert('Something went wrong');
+        }
+    }
   return (
     <SafeAreaView style={styles.container}>
         <View style={styles.LogoConatiner}>
@@ -31,7 +51,7 @@ const Login = () => {
             secureTextEntry={true}
         />
         <Text style={styles.ForgotPassword}>Forgot Password</Text>
-        <Pressable style={styles.LoginButton}>
+        <Pressable style={styles.LoginButton} onPress={handle}>
             <Text style={styles.LoginButtonText}>Login In</Text>
         </Pressable>
         </View>

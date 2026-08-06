@@ -1,10 +1,11 @@
 import { StyleSheet, Text, View,Dimensions, TextInput, Pressable } from 'react-native'
 import React,{useState,useEffect} from 'react'
 import {SafeAreaView} from 'react-native-safe-area-context'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {ActivityIndicator} from 'react-native';
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { useNavigation } from '@react-navigation/native';
-import { BACKEND_URI } from '@env';
+import { BACKEND_URI } from '../config/env';
 import axios from 'axios';
 const {width,height}=Dimensions.get('window');
 const SignUp = () => {
@@ -34,6 +35,9 @@ const SignUp = () => {
                 email:Email,
                 password:Password
             });
+            const token=res.data.token;
+            await AsyncStorage.setItem('authtoken',token);
+            console.log("Backend URI:", BACKEND_URI);
             alert("User Created Successfully");
             setIsLoading(false);
             navigation.navigate('Home');
@@ -42,7 +46,7 @@ const SignUp = () => {
             setIsLoading(false);
             if (error.response && error.response.data) {
                 alert(error.response.data.message);
-                console.log("Server error:", error.response.data);
+                console.log("Server error:", error.response);
             } else {
                 alert("Network error or server not reachable");
                 console.log("Axios error:", error.message);
@@ -67,6 +71,7 @@ const SignUp = () => {
             <TextInput
                 style={styles.LabelInput}
                 value={Email}
+                keyboardType='email'
                 onChangeText={setisEmail}
                 placeholder='Enter the Email'
             />
