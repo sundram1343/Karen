@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {ActivityIndicator} from 'react-native';
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { useNavigation } from '@react-navigation/native';
-import { BACKEND_URI } from '../config/env';
+import { BACKEND_URI } from '@env';
 import axios from 'axios';
 const {width,height}=Dimensions.get('window');
 const SignUp = () => {
