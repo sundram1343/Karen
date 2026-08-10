@@ -20,7 +20,13 @@ const registeruser=async(req,res)=>{
 }
 const loginuser=async(req,res)=>{
     try{
+        if(!req.body){
+            return res.status(400).json({message:'Enter all the fields'});
+        }
         const {email,password}=req.body;
+        if(!email || !password){
+            return res.status(400).json({message:'Enter all the fields'});
+        }
         const user=await User.findOne({email});
         if(!user){
             return res.status(400).json({message:'Invalid Credentials'});

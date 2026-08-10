@@ -4,7 +4,7 @@ import {SafeAreaView} from 'react-native-safe-area-context'
 import LoginScreenLogo from '../assets/LoginScreen.png'
 import { useNavigation } from '@react-navigation/native'
 import axios from 'axios'
-import { BACKEND_URI } from '../config/env'
+import { BACKEND_URI } from '@env'
 const {width,height}=Dimensions.get('window');
 const Login = () => {
     const navigation=useNavigation();
@@ -16,12 +16,11 @@ const Login = () => {
             return;
         }
         try{
-            const res= await axios.post(BACKEND_URI+'api/auth/login',{
+            const res= await axios.post(BACKEND_URI+'/auth/login',{
                 email:email,
                 password:password
             });
             console.log(res.data);
-            
         }
         catch(error){
             console.log('Error in login:', error);
