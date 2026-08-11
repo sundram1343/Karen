@@ -9,7 +9,7 @@ const ChatHeader = ({ onOpenDrawer }) => {
           <Text style={styles.iconText}>☰</Text>
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>Lumina AI</Text>
+          <Text style={styles.title}>KAREN</Text>
           <View style={styles.statusContainer}>
             <View style={styles.onlineDot} />
             <Text style={styles.statusText}>ONLINE</Text>

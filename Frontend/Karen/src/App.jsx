@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext } from 'react';
 import { StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import SignUp from './AuthScreens/SignUp';
 import Home from './Home/Home';
 
 const Stack = createStackNavigator();
+export const AuthContext = createContext();
 
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -29,7 +30,7 @@ const App = () => {
   useEffect(() => {
     const getToken = async () => {
       try {
-        const value = await AsyncStorage.getItem('token');
+        const value = await AsyncStorage.getItem('authtoken');
         if (value) {
           setistoken(value);
         }
@@ -41,13 +42,15 @@ const App = () => {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.flexContainer}>
-        <NavigationContainer>
-          {!token ? <AuthStack /> : <AppStack />}
-        </NavigationContainer>
-      </SafeAreaView>
-    </SafeAreaProvider>
+    <AuthContext.Provider value={{ setistoken }}>
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.flexContainer}>
+          <NavigationContainer>
+            {!token ? <AuthStack /> : <AppStack />}
+          </NavigationContainer>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </AuthContext.Provider>
   );
 };
 

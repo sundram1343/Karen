@@ -1,15 +1,17 @@
 import { StyleSheet, Text, View,Dimensions, TextInput, Pressable } from 'react-native'
-import React,{useState,useEffect} from 'react'
+import React,{useState,useEffect,useContext} from 'react'
 import {SafeAreaView} from 'react-native-safe-area-context'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {ActivityIndicator} from 'react-native';
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { useNavigation } from '@react-navigation/native';
 import { BACKEND_URI } from '@env';
+import { AuthContext } from '../App';
 import axios from 'axios';
 const {width,height}=Dimensions.get('window');
 const SignUp = () => {
     const navigation=useNavigation();
+    const {setistoken}=useContext(AuthContext);
     const [isLoading,setIsLoading]=useState(false);
     const [Name,setisName]=useState('');
     const [Email,setisEmail]=useState('');
@@ -30,6 +32,7 @@ const SignUp = () => {
         }
         setIsLoading(true);
         try{
+            console.log("SignUp - Sending request to:", `${BACKEND_URI}/auth/register`);
             const res=await axios.post(`${BACKEND_URI}/auth/register`,{
                 name:Name,
                 email:Email,
@@ -37,10 +40,8 @@ const SignUp = () => {
             });
             const token=res.data.token;
             await AsyncStorage.setItem('authtoken',token);
-            console.log("Backend URI:", BACKEND_URI);
-            alert("User Created Successfully");
             setIsLoading(false);
-            navigation.navigate('Home');
+            setistoken(token);
         }
         catch (error) {
             setIsLoading(false);
@@ -71,7 +72,7 @@ const SignUp = () => {
             <TextInput
                 style={styles.LabelInput}
                 value={Email}
-                keyboardType='email'
+                keyboardType='email-address'
                 onChangeText={setisEmail}
                 placeholder='Enter the Email'
             />
@@ -81,6 +82,7 @@ const SignUp = () => {
                 value={Password}
                 onChangeText={setisPassword}
                 placeholder='Enter the Password'
+                secureTextEntry={true}
             />
             <Text style={styles.Label}>Confirm Password</Text>
             <TextInput
@@ -88,6 +90,7 @@ const SignUp = () => {
                 value={ConfirmPassword}
                 onChangeText={setisConfirmPassword}
                 placeholder='Enter the Confirm Password'
+                secureTextEntry={true}
             />
             <View style={styles.BouncyCheckboxContainer}>
                 <BouncyCheckbox

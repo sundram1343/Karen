@@ -23,7 +23,7 @@ const NavDrawer = ({ visible, onClose, onSelectNewChat }) => {
               style={styles.logoImage}
             />
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>Lumina</Text>
+              <Text style={styles.userName}>KAREN</Text>
               <Text style={styles.userRole}>Creative User • Pro</Text>
             </View>
           </View>
@@ -40,25 +40,20 @@ const NavDrawer = ({ visible, onClose, onSelectNewChat }) => {
               <Text style={styles.menuIcon}>💬</Text>
               <Text style={styles.activeMenuText}>New Chat</Text>
             </TouchableOpacity>
-
             <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
               <Text style={styles.menuIcon}>🕒</Text>
               <Text style={styles.menuText}>Recent Threads</Text>
             </TouchableOpacity>
-
             <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
               <Text style={styles.menuIcon}>🔖</Text>
               <Text style={styles.menuText}>Saved Prompts</Text>
             </TouchableOpacity>
-
             <View style={styles.divider} />
-
             <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
               <Text style={styles.menuIcon}>⚙️</Text>
               <Text style={styles.menuText}>Account Settings</Text>
             </TouchableOpacity>
           </View>
-
           <View style={styles.footer}>
             <Text style={styles.footerText}>LUMINA INTELLIGENCE V1.0.2</Text>
           </View>

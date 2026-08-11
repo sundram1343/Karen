@@ -1,13 +1,16 @@
 import { StyleSheet, Text, View,Image,Dimensions,TextInput,Pressable } from 'react-native'
-import React,{useState} from 'react'
+import React,{useState,useContext} from 'react'
 import {SafeAreaView} from 'react-native-safe-area-context'
 import LoginScreenLogo from '../assets/LoginScreen.png'
 import { useNavigation } from '@react-navigation/native'
 import axios from 'axios'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { BACKEND_URI } from '@env'
+import { AuthContext } from '../App'
 const {width,height}=Dimensions.get('window');
 const Login = () => {
     const navigation=useNavigation();
+    const {setistoken}=useContext(AuthContext);
     const [email,setemail]=useState('');
     const [password,setpassword]=useState('');
     const handle=async ()=>{
@@ -16,15 +19,22 @@ const Login = () => {
             return;
         }
         try{
+            console.log('Sending request to:', BACKEND_URI+'/auth/login');
             const res= await axios.post(BACKEND_URI+'/auth/login',{
                 email:email,
                 password:password
             });
-            console.log(res.data);
+            const token=res.data.token;
+            await AsyncStorage.setItem('authtoken',token);
+            setistoken(token);
         }
         catch(error){
             console.log('Error in login:', error);
-            alert('Something went wrong');
+            if (error.response && error.response.data && error.response.data.message) {
+                alert(error.response.data.message);
+            } else {
+                alert('Network error or server not reachable');
+            }
         }
     }
   return (

@@ -15,7 +15,7 @@ const ChatInput = ({ text, onChangeText, onSend }) => {
           style={styles.textInput}
           value={text}
           onChangeText={onChangeText}
-          placeholder="Message Lumina AI..."
+          placeholder="Message Karen..."
           placeholderTextColor="rgba(144, 143, 160, 0.6)"
           multiline={true}
           maxHeight={100}
