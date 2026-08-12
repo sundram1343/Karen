@@ -11,13 +11,10 @@ const Home = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const scrollViewRef = useRef(null);
-
   const handleSend = (overrideText) => {
     const textToSend = overrideText || inputText;
     if (!textToSend.trim()) return;
-
     const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
     const newUserMsg = {
       id: Date.now().toString(),
       sender: 'user',
@@ -25,11 +22,9 @@ const Home = () => {
       time: currentTime,
       status: `Sent ${currentTime}`,
     };
-
     setMessages((prev) => [...prev, newUserMsg]);
     if (!overrideText) setInputText('');
     setIsTyping(true);
-
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);

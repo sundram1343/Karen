@@ -1,16 +1,35 @@
-import React from 'react';
+import React,{useState} from 'react';
 import { StyleSheet, View, TextInput, TouchableOpacity, Text } from 'react-native';
-
+import { BACKEND_URI } from '@env';
+import axios from 'axios';
 const ChatInput = ({ text, onChangeText, onSend }) => {
   const isSendDisabled = text.trim() === '';
-
+  const [usermessage,setusermessage]=useState('');
+  const [chatid,setchatid]=useState('');
+  const [aimessage,setaimessage]=useState('');
+  const senddata=async()=>{
+      try{
+        const res= await axios.post(BACKEND_URI+'/message/send',{
+          usermessage,
+          chatid,
+        }
+        ,{
+          headers:{
+            Authorization:`Bearer ${token}`
+          }
+        })
+        setaimessage(res.data.message);
+      }
+      catch(err){
+        console.log(err);
+      }
+  }
   return (
     <View style={styles.outerContainer}>
       <View style={styles.inputContainer}>
         <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
           <Text style={styles.actionIcon}>➕</Text>
         </TouchableOpacity>
-
         <TextInput
           style={styles.textInput}
           value={text}
@@ -27,7 +46,7 @@ const ChatInput = ({ text, onChangeText, onSend }) => {
 
         <TouchableOpacity
           style={[styles.sendBtn, isSendDisabled && styles.sendBtnDisabled]}
-          onPress={onSend}
+          onPress={senddata}
           disabled={isSendDisabled}
           activeOpacity={0.8}
         >

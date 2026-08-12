@@ -1,7 +1,7 @@
-import groq from 'groq-sdk'
+import Groq from 'groq-sdk';
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const message=async(usermessage)=>{
-    try{
+const message = async (usermessage) => {
+    try {
         const chatCompletion = await groq.chat.completions.create({
             model: "llama-3.1-70b-versatile",
             messages: [
@@ -10,10 +10,8 @@ const message=async(usermessage)=>{
             ],
         });
         return chatCompletion.choices[0].message.content;
-    }
-    catch(error){
-        console.log(error);
+    } catch (error) {
+        console.error(error);
         return 'Internal Server Error';
     }
-}
-module.exports={message};
+};

@@ -2,13 +2,13 @@ const Message=require('../models/message-model');
 const Chat=require('../models/chat-model');
 const User=require('../models/user-model');
 const {message}= require('../config/groq-config')
-const message=async(req,res)=>{
+const sendmessage=async(req,res)=>{
     try{
-        const {userid,message,chatid}=req.body;
-        if(!userid || !message){
+        const {usermessage,chatid}=req.body;
+        if(!usermessage){
             res.status(200).json({message:'All Fields are required'});
         }
-        const responsemessage= await message(message);
+        const responsemessage= await message(usermessage);
         if(!chatid){
             const chat=await Chat.create({
                 user:[userid],
@@ -18,7 +18,7 @@ const message=async(req,res)=>{
         }
         const newusermessage=await Message.create({
             chat:chatid,
-            content:message,
+            content:usermessage,
             user_message:true,
         });
         const newAImessage=await Message.create({
@@ -33,4 +33,4 @@ const message=async(req,res)=>{
         return res.status(500).json({message:'Internal Server Error'});
     }
 }
-module.exports={message};
+module.exports={sendmessage};
