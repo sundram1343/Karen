@@ -1,58 +1,69 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import { StyleSheet, Text, View, ScrollView, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
 import ChatHeader from '../Components/ChatHeader';
 import NavDrawer from '../Components/NavDrawer';
 import MessageBubble from '../Components/MessageBubble';
 import TypingIndicator from '../Components/TypingIndicator';
-import SuggestionChips from '../Components/SuggestionChips';
 import ChatInput from '../Components/ChatInput';
+import axios from 'axios';
+import { AuthContext } from '../App';
+import { BACKEND_URI } from '@env';
 const Home = () => {
-  const [inputText, setInputText] = useState('');
+  const [message, setmessage] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [chatid, setchatid] = useState(null);
   const scrollViewRef = useRef(null);
-  const handleSend = (overrideText) => {
-    const textToSend = overrideText || inputText;
-    if (!textToSend.trim()) return;
-    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const newUserMsg = {
-      id: Date.now().toString(),
-      sender: 'user',
-      text: textToSend,
-      time: currentTime,
-      status: `Sent ${currentTime}`,
-    };
-    setMessages((prev) => [...prev, newUserMsg]);
-    if (!overrideText) setInputText('');
-    setIsTyping(true);
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-    setTimeout(() => {
-      const newAiMsg = {
-        id: (Date.now() + 1).toString(),
-        sender: 'ai',
-        text: `Pro-level rendering is now active for this thread. Model throughput optimized for maximum fidelity and high-intensity outputs.`,
+  const { token } = useContext(AuthContext);
+  const handleSend = async (msg) => {
+    if (!msg || !msg.trim()) return;
+    try {
+      setIsTyping(true);
+      const userMsg = {
+        id: Date.now().toString(),
+        sender: 'user',
+        text: msg,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-      setMessages((prev) => [...prev, newAiMsg]);
+      setmessage((prev) => [...prev, userMsg]);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+      const res = await axios.post(BACKEND_URI+`/message/send`, {
+        usermessage: msg,
+        chatid
+      }, {  
+        headers: {
+          Authorization: "Bearer " + token
+        }
+      });
+      setchatid(res.data.chatid);
+      const aiMsg = {
+        id: res.data.newAImessage._id,
+        sender: 'Karen',
+        text: res.data.newAImessage.content,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setmessage((prev) => [...prev, aiMsg]);
+    }
+    catch (error) {
+      console.log("Error sending message:", error);
+    }
+    finally {
       setIsTyping(false);
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
-    }, 1400);
-  };
-  const handleSelectChip = (chipText) => {
-    setInputText(`How do I ${chipText.toLowerCase()} using Lumina AI?`);
+    }
   };
   const handleNewChat = () => {
-    setMessages([]);
+    setmessage([]);
+    setchatid(null);
     setIsTyping(false);
   };
   return (
     <SafeAreaView style={styles.container}>
       <ChatHeader onOpenDrawer={() => setDrawerVisible(true)} />
-
       <NavDrawer
         visible={drawerVisible}
         onClose={() => setDrawerVisible(false)}
@@ -68,13 +79,13 @@ const Home = () => {
           contentContainerStyle={styles.chatScrollerContent}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
+          {message.map((msg, index) => (
+            <MessageBubble key={index} message={msg} />
+          ))}
           {isTyping && <TypingIndicator />}
         </ScrollView>
-        <SuggestionChips onSelectChip={handleSelectChip} />
         <ChatInput
-          text={inputText}
-          onChangeText={setInputText}
-          onSend={() => handleSend()}
+          onSend={handleSend}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

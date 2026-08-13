@@ -1,12 +1,8 @@
 const mongoose=require('mongoose');
 const messageSchema=new mongoose.Schema({
-    user_message:{
-        type:Boolean,
-        default:false
-    },
-    AI_message:{
-        type:Boolean,
-        default:true
+    sender:{
+        type:String,
+        required:true,
     },
     chat:{
         type:mongoose.Schema.ObjectId,

@@ -1,9 +1,9 @@
-import Groq from 'groq-sdk';
+const Groq = require('groq-sdk');
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const message = async (usermessage) => {
     try {
         const chatCompletion = await groq.chat.completions.create({
-            model: "llama-3.1-70b-versatile",
+            model:  "llama-3.3-70b-versatile",
             messages: [
                 { role: "system", content: "You are a helpful assistant." },
                 { role: "user", content: usermessage }
@@ -15,3 +15,4 @@ const message = async (usermessage) => {
         return 'Internal Server Error';
     }
 };
+module.exports = { message };

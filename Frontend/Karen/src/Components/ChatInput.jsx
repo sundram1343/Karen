@@ -1,28 +1,11 @@
 import React,{useState} from 'react';
 import { StyleSheet, View, TextInput, TouchableOpacity, Text } from 'react-native';
-import { BACKEND_URI } from '@env';
-import axios from 'axios';
-const ChatInput = ({ text, onChangeText, onSend }) => {
-  const isSendDisabled = text.trim() === '';
+const ChatInput = ({ onSend }) => {
   const [usermessage,setusermessage]=useState('');
-  const [chatid,setchatid]=useState('');
-  const [aimessage,setaimessage]=useState('');
+  const isSendDisabled = usermessage.trim() === '';
   const senddata=async()=>{
-      try{
-        const res= await axios.post(BACKEND_URI+'/message/send',{
-          usermessage,
-          chatid,
-        }
-        ,{
-          headers:{
-            Authorization:`Bearer ${token}`
-          }
-        })
-        setaimessage(res.data.message);
-      }
-      catch(err){
-        console.log(err);
-      }
+    onSend(usermessage);
+    setusermessage('');
   }
   return (
     <View style={styles.outerContainer}>
@@ -32,18 +15,16 @@ const ChatInput = ({ text, onChangeText, onSend }) => {
         </TouchableOpacity>
         <TextInput
           style={styles.textInput}
-          value={text}
-          onChangeText={onChangeText}
+          value={usermessage}
+          onChangeText={setusermessage}
           placeholder="Message Karen..."
           placeholderTextColor="rgba(144, 143, 160, 0.6)"
           multiline={true}
           maxHeight={100}
         />
-
         <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
           <Text style={styles.actionIcon}>🎙️</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.sendBtn, isSendDisabled && styles.sendBtnDisabled]}
           onPress={senddata}

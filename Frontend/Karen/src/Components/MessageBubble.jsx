@@ -1,28 +1,7 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
-
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 const MessageBubble = ({ message }) => {
   const isUser = message.sender === 'user';
-  const [liked, setLiked] = useState(false);
-  const [disliked, setDisliked] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    setCopied(true);
-    Alert.alert('Copied', 'Message content copied to clipboard');
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleLike = () => {
-    setLiked(!liked);
-    if (disliked) setDisliked(false);
-  };
-
-  const handleDislike = () => {
-    setDisliked(!disliked);
-    if (liked) setLiked(false);
-  };
-
   if (isUser) {
     return (
       <View style={styles.userWrapper}>
@@ -35,17 +14,13 @@ const MessageBubble = ({ message }) => {
       </View>
     );
   }
-
   return (
     <View style={styles.aiWrapper}>
       <View style={styles.aiAvatar}>
         <Text style={styles.aiAvatarIcon}>⚡</Text>
       </View>
-
       <View style={styles.aiBubble}>
         <View style={styles.shimmerLine} />
-
-        {/* Text Content */}
         {message.highlightText ? (
           <Text style={styles.aiText}>
             {message.textBefore}
@@ -55,8 +30,6 @@ const MessageBubble = ({ message }) => {
         ) : (
           <Text style={styles.aiText}>{message.text}</Text>
         )}
-
-        {/* Embedded Metrics Card */}
         {message.metrics && (
           <View style={styles.metricsCard}>
             <View style={styles.metricsHeader}>
@@ -75,30 +48,9 @@ const MessageBubble = ({ message }) => {
             </View>
           </View>
         )}
-
         {message.secondaryText && (
           <Text style={[styles.aiText, styles.secondarySpacing]}>{message.secondaryText}</Text>
         )}
-
-        {/* Action Row */}
-        <View style={styles.actionRow}>
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionBtn} onPress={handleCopy}>
-              <Text style={[styles.actionIcon, copied ? styles.cyanText : null]}>
-                {copied ? '✓' : '📋'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionBtn} onPress={handleLike}>
-              <Text style={[styles.actionIcon, liked ? styles.cyanText : null]}>👍</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionBtn} onPress={handleDislike}>
-              <Text style={[styles.actionIcon, disliked ? styles.pinkText : null]}>👎</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.aiTime}>{message.time}</Text>
-        </View>
       </View>
     </View>
   );

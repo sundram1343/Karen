@@ -42,7 +42,7 @@ const App = () => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ setistoken }}>
+    <AuthContext.Provider value={{ token, setistoken }}>
       <SafeAreaProvider>
         <SafeAreaView style={styles.flexContainer}>
           <NavigationContainer>

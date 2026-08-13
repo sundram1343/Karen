@@ -1,11 +1,11 @@
 const mongoose=require('mongoose');
 const chatSchema=new mongoose.Schema({
-    message:{
+    messages:[{
         type:mongoose.Schema.ObjectId,
         ref:'Message',
-    },
+    }],
     name:String,
-    User:{
+    user:{
         type:mongoose.Schema.ObjectId,
         ref:'User',
     }
