@@ -1,7 +1,24 @@
-import React from 'react';
+import React,{useState} from 'react';
 import { StyleSheet, Text, View, Modal, TouchableOpacity, Image, TouchableWithoutFeedback } from 'react-native';
-
-const NavDrawer = ({ visible, onClose, onSelectNewChat }) => {
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { BACKEND_URI } from '@env';
+const NavDrawer = ({ visible, onClose, onSelectNewChat, onSelectRecentTheread }) => {
+  const [chat,setchat]=useState([]);
+  const [showchats,setshowchats]=useState(false);
+  const ChatRetreival=async()=>{
+    try{
+      const token=await AsyncStorage.getItem("authtoken");
+      const res = await axios.get(BACKEND_URI+`/message/chats`,{
+        headers:{
+          Authorization:`Bearer ${token}`
+        }
+      });
+      setchat(res.data.chats);
+    }catch(error){
+      console.log("Error in retrieval",error);
+    }
+  }
   return (
     <Modal
       visible={visible}
@@ -40,10 +57,31 @@ const NavDrawer = ({ visible, onClose, onSelectNewChat }) => {
               <Text style={styles.menuIcon}>💬</Text>
               <Text style={styles.activeMenuText}>New Chat</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => {
+    setshowchats(!showchats);
+    if (!showchats) {
+      ChatRetreival();
+    }}} activeOpacity={0.7}>
               <Text style={styles.menuIcon}>🕒</Text>
               <Text style={styles.menuText}>Recent Threads</Text>
             </TouchableOpacity>
+            <View style={styles.chatList}>
+              {showchats&&chat.map((chat) => (
+                <TouchableOpacity
+                  key={chat._id}
+                  style={styles.chatItem}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    onSelectRecentTheread?.(chat._id);
+                    onClose();
+                  }}
+                >
+                  <Text style={styles.chatName}>
+                    {chat.name || "New Chat"}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
             <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
               <Text style={styles.menuIcon}>🔖</Text>
               <Text style={styles.menuText}>Saved Prompts</Text>
@@ -165,4 +203,14 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     fontWeight: '600',
   },
+  chatItem: {
+  paddingVertical: 10,
+  paddingHorizontal: 50,
+  borderRadius: 8,
+},
+
+chatName: {
+  fontSize: 14,
+  color: '#c7c4d7',
+},
 });

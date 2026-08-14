@@ -55,9 +55,7 @@ const MessageBubble = ({ message }) => {
     </View>
   );
 };
-
 export default MessageBubble;
-
 const styles = StyleSheet.create({
   userWrapper: {
     width: '100%',

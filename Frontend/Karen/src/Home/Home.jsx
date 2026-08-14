@@ -56,6 +56,29 @@ const Home = () => {
       }, 100);
     }
   };
+  const handleRecentThread=async(id)=>{
+    setchatid(id);
+    try{
+      const res = await axios.get(BACKEND_URI+`/message/chat/${chatid}`,{
+        headers:{
+          Authorization:"Bearer "+token
+        }
+      });
+      const formattedMessages = res.data.messages.map((msg) => ({
+        id: msg._id,
+        sender: msg.sender,
+        text: msg.content,
+        time: new Date(msg.createdAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      }));
+      setmessage(formattedMessages);
+    }
+    catch(error){
+      console.log("Error in retrieval",error);
+    }
+  }
   const handleNewChat = () => {
     setmessage([]);
     setchatid(null);
@@ -68,6 +91,7 @@ const Home = () => {
         visible={drawerVisible}
         onClose={() => setDrawerVisible(false)}
         onSelectNewChat={handleNewChat}
+        onSelectRecentTheread={handleRecentThread}
       />
       <KeyboardAvoidingView
         style={styles.keyboardContainer}

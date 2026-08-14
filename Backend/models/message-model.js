@@ -10,6 +10,6 @@ const messageSchema=new mongoose.Schema({
         required:true,
     },
     content:String
-});
+}, { timestamps: true });
 const Message=new mongoose.model('Message',messageSchema);
 module.exports=Message;
