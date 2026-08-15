@@ -1,11 +1,48 @@
 import React,{useState} from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, Text } from 'react-native';
+import { StyleSheet, View, TextInput, TouchableOpacity, Text ,Platform,PermissionsAndroid} from 'react-native';
+import VoiceToText, { VoiceToTextEvents } from '@appcitor/react-native-voice-to-text';
 const ChatInput = ({ onSend }) => {
   const [usermessage,setusermessage]=useState('');
+  const [listening,setListening]=useState(false);
   const isSendDisabled = usermessage.trim() === '';
+  const requestMicrophonePermission = async () => {
+  try {
+    console.log("Requesting microphone permission...");
+    const result = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+      {
+        title: "Microphone Permission",
+        message: "Karen needs access to your microphone.",
+        buttonPositive: "Allow",
+        buttonNegative: "Deny",
+      }
+    );
+    return result === PermissionsAndroid.RESULTS.GRANTED;
+  } catch (error) {
+    console.log("Permission request error:", error);
+    return false;
+  }
+};
   const senddata=async()=>{
     onSend(usermessage);
     setusermessage('');
+  }
+  const Transcript= async()=>{
+    const isGranted = await requestMicrophonePermission();
+    if (!isGranted) {
+      console.log("Microphone permission denied");
+      return;
+    }
+    try{
+      const result = await VoiceToText.start({
+        recognitionType:RecognitionType.Search
+      });
+      console.log("Speech result:", result);
+      setusermessage(result);
+      senddata();;
+    }catch(error){
+      console.log(error);
+    }
   }
   return (
     <View style={styles.outerContainer}>
@@ -22,8 +59,8 @@ const ChatInput = ({ onSend }) => {
           multiline={true}
           maxHeight={100}
         />
-        <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
-          <Text style={styles.actionIcon}>🎙️</Text>
+        <TouchableOpacity onPress={Transcript} style={styles.actionBtn} activeOpacity={0.7}>
+          <Text style={styles.actionIcon}>{listening? '⏹️':'🎙️'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.sendBtn, isSendDisabled && styles.sendBtnDisabled]}
