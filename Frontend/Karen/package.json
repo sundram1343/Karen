@@ -11,8 +11,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "@appcitor/react-native-voice-to-text": "^0.2.1",
     "@ascendtis/react-native-voice-to-text": "^0.3.2",
+    "@dbkable/react-native-speech-to-text": "^1.0.0",
     "@react-native-async-storage/async-storage": "^3.1.1",
     "@react-native/new-app-screen": "0.86.2",
     "@react-navigation/stack": "^7.10.17",

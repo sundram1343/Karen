@@ -1,6 +1,5 @@
 import React,{useState} from 'react';
 import { StyleSheet, View, TextInput, TouchableOpacity, Text ,Platform,PermissionsAndroid} from 'react-native';
-import VoiceToText, { VoiceToTextEvents } from '@appcitor/react-native-voice-to-text';
 const ChatInput = ({ onSend }) => {
   const [usermessage,setusermessage]=useState('');
   const [listening,setListening]=useState(false);

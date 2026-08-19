@@ -1,4 +1,10 @@
 {
   "name": "Karen",
-  "displayName": "Karen"
+  "displayName": "Karen",
+  "react-native-speech-to-text": {
+    "ios": {
+      "speechRecognitionPermission": " $(PRODUCT_NAME) would like to access the microphone to enable voice dictation and commands.",
+      "speechRecognitionUsageDescription": "$(PRODUCT_NAME) would like to access the microphone to enable voice dictation and commands."
+    }
+  }
 }
