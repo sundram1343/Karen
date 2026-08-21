@@ -1,48 +1,63 @@
-import React,{useState} from 'react';
+import React,{useState,useEffect} from 'react';
 import { StyleSheet, View, TextInput, TouchableOpacity, Text ,Platform,PermissionsAndroid} from 'react-native';
+import {
+  start,
+  stop,
+  requestPermissions,
+  isAvailable,
+  addSpeechResultListener,
+  addSpeechErrorListener,
+  addSpeechEndListener,
+} from '@dbkable/react-native-speech-to-text';
 const ChatInput = ({ onSend }) => {
   const [usermessage,setusermessage]=useState('');
   const [listening,setListening]=useState(false);
   const isSendDisabled = usermessage.trim() === '';
-  const requestMicrophonePermission = async () => {
-  try {
-    console.log("Requesting microphone permission...");
-    const result = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-      {
-        title: "Microphone Permission",
-        message: "Karen needs access to your microphone.",
-        buttonPositive: "Allow",
-        buttonNegative: "Deny",
-      }
-    );
-    return result === PermissionsAndroid.RESULTS.GRANTED;
-  } catch (error) {
-    console.log("Permission request error:", error);
-    return false;
-  }
-};
+  useEffect(()=>{
+    const resultListener = addSpeechResultListener((result) => {
+      setusermessage(result.transcript);
+    });
+    const errorListener = addSpeechErrorListener((error) => {
+      console.error('Speech error:', error);
+      setListening(false);
+    });
+    const endListener = addSpeechEndListener(() => {
+      setListening(false);
+    });
+    return () => {
+      resultListener.remove();
+      errorListener.remove();
+      endListener.remove();
+    };
+  },[])
   const senddata=async()=>{
     onSend(usermessage);
     setusermessage('');
   }
-  const Transcript= async()=>{
-    const isGranted = await requestMicrophonePermission();
-    if (!isGranted) {
-      console.log("Microphone permission denied");
-      return;
-    }
+  const handlestart= async()=>{
     try{
-      const result = await VoiceToText.start({
-        recognitionType:RecognitionType.Search
-      });
-      console.log("Speech result:", result);
-      setusermessage(result);
-      senddata();;
+      const available=await isAvailable();
+      if (!available) {
+        alert('Speech recognition not available');
+        return;
+      }
+      const isGranted = await requestPermissions();
+      if (!isGranted) {
+        console.log("Microphone permission denied");
+        return;
+      }
+      await start({ language: 'en-US' });
+      setListening(true);
     }catch(error){
       console.log(error);
     }
   }
+  const handlestop = async () => {
+    await stop();
+    setListening(false);
+    onSend();
+    setusermessage('');
+  };
   return (
     <View style={styles.outerContainer}>
       <View style={styles.inputContainer}>
@@ -58,7 +73,7 @@ const ChatInput = ({ onSend }) => {
           multiline={true}
           maxHeight={100}
         />
-        <TouchableOpacity onPress={Transcript} style={styles.actionBtn} activeOpacity={0.7}>
+        <TouchableOpacity onPress={listening?handlestop:handlestart} style={styles.actionBtn} activeOpacity={0.7}>
           <Text style={styles.actionIcon}>{listening? '⏹️':'🎙️'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
