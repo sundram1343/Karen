@@ -1,5 +1,5 @@
 import React,{useState,useEffect} from 'react';
-import { StyleSheet, View, TextInput, TouchableOpacity, Text ,Platform,PermissionsAndroid} from 'react-native';
+import { StyleSheet, View, TextInput, TouchableOpacity, Text } from 'react-native';
 import {
   start,
   stop,
@@ -9,10 +9,18 @@ import {
   addSpeechErrorListener,
   addSpeechEndListener,
 } from '@dbkable/react-native-speech-to-text';
+import {
+  pick,
+  types,
+  keepLocalCopy,
+  isErrorWithCode,
+  errorCodes,
+} from '@react-native-documents/picker'
 const ChatInput = ({ onSend }) => {
   const [usermessage,setusermessage]=useState('');
   const [listening,setListening]=useState(false);
-  const isSendDisabled = usermessage.trim() === '';
+  const [selectedFile, setSelectedFile] = useState(null);
+  const isSendDisabled = usermessage.trim() === ''&& !selectedFile;
   useEffect(()=>{
     const resultListener = addSpeechResultListener((result) => {
       setusermessage(result.transcript);
@@ -58,10 +66,48 @@ const ChatInput = ({ onSend }) => {
     onSend();
     setusermessage('');
   };
+   const pickDocument = async () => {
+    try {
+      const [file] = await pick({
+        type: [types.allFiles],
+        allowMultiSelection: false,
+      });
+      if (!file) {
+        return;
+      }
+      const [localCopy] = await keepLocalCopy({
+        files: [
+          {
+            uri: file.uri,
+            fileName: file.name || 'document',
+          },
+        ],
+        destination: 'cachesDirectory',
+      });
+      if (localCopy.status === 'error') {
+        throw new Error('Could not copy the selected file');
+      }
+      const fileToUpload = {
+        ...file,
+        uri: localCopy.localUri,
+      };
+      setSelectedFile(fileToUpload);
+      onSend();
+    } catch (error) {
+      if (
+        isErrorWithCode(error) &&
+        error.code === errorCodes.OPERATION_CANCELED
+      ) {
+        return;
+      }
+      console.error('Document picker error:', error);
+      Alert.alert('Error', 'Could not select the document.');
+    }
+  };
   return (
     <View style={styles.outerContainer}>
       <View style={styles.inputContainer}>
-        <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.actionBtn} onPress={pickDocument} activeOpacity={0.7}>
           <Text style={styles.actionIcon}>➕</Text>
         </TouchableOpacity>
         <TextInput

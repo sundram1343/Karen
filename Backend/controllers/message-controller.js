@@ -9,6 +9,12 @@ const sendmessage=async(req,res)=>{
         if(!usermessage){
             return res.status(400).json({message:'Message content is required'});
         }
+        const file = req.file ? {
+            filename: req.file.originalname,
+            path: `/uploads/${userid}/${req.file.filename}`,
+            mimetype: req.file.mimetype,
+            size: req.file.size
+        } : null;
         if(!chatid){
             const chatName = usermessage.length > 25 ? usermessage.substring(0, 25) + '...' : usermessage;
             const chat=await Chat.create({
@@ -34,13 +40,15 @@ const sendmessage=async(req,res)=>{
             }
         )),
             { 
-                role: 'user', content: usermessage 
+                role: 'user', 
+                content: usermessage || `Uploaded file: ${file.filename}`,...(file ? { file: file.path } : {})
             }
         ];
         const responsemessage= await message(historyPayload);
         const newusermessage=await Message.create({
             chat:chatid,
             content:usermessage,
+            file:file,
             sender:'user',
         });
         const newAImessage=await Message.create({

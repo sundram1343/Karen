@@ -13,10 +13,11 @@ const Home = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [chatid, setchatid] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const scrollViewRef = useRef(null);
   const { token } = useContext(AuthContext);
-  const handleSend = async (msg) => {
-    if (!msg || !msg.trim()) return;
+  const handleSend = async (msg,file) => {
+    if ((!msg || !msg.trim())) return;
     try {
       setIsTyping(true);
       const userMsg = {
@@ -31,7 +32,8 @@ const Home = () => {
       }, 100);
       const res = await axios.post(BACKEND_URI+`/message/send`, {
         usermessage: msg,
-        chatid
+        chatid,
+        file:file
       }, {  
         headers: {
           Authorization: "Bearer " + token
@@ -83,6 +85,7 @@ const Home = () => {
     setmessage([]);
     setchatid(null);
     setIsTyping(false);
+    setSelectedFile(null);
   };
   return (
     <SafeAreaView style={styles.container}>

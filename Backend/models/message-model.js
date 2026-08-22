@@ -9,7 +9,11 @@ const messageSchema=new mongoose.Schema({
         ref:'Chat',
         required:true,
     },
-    content:String
+    content:String,
+    file:{                                     
+        filename:String,
+        path:String,
+    }
 }, { timestamps: true });
 const Message=new mongoose.model('Message',messageSchema);
 module.exports=Message;
