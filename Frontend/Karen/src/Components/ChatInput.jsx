@@ -8,7 +8,7 @@ import {
   addSpeechResultListener,
   addSpeechErrorListener,
   addSpeechEndListener,
-} from '@dbkable/react-native-speech-to-text';
+}from '@dbkable/react-native-speech-to-text';
 import {
   pick,
   types,
@@ -20,7 +20,8 @@ const ChatInput = ({ onSend }) => {
   const [usermessage,setusermessage]=useState('');
   const [listening,setListening]=useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  const isSendDisabled = usermessage.trim() === ''&& !selectedFile;
+  const [hasfile,sethasfile]=useState(false);
+  const isSendDisabled = usermessage.trim() === ''&& !hasfile;
   useEffect(()=>{
     const resultListener = addSpeechResultListener((result) => {
       setusermessage(result.transcript);
@@ -39,8 +40,10 @@ const ChatInput = ({ onSend }) => {
     };
   },[])
   const senddata=async()=>{
-    onSend(usermessage);
+    onSend(usermessage,selectedFile);
     setusermessage('');
+    setSelectedFile(null);
+    sethasfile(false);
   }
   const handlestart= async()=>{
     try{
@@ -90,9 +93,10 @@ const ChatInput = ({ onSend }) => {
       const fileToUpload = {
         ...file,
         uri: localCopy.localUri,
+        displayName: file.name || file.fileName || 'document',
       };
       setSelectedFile(fileToUpload);
-      onSend();
+      sethasfile(true);
     } catch (error) {
       if (
         isErrorWithCode(error) &&
@@ -106,7 +110,15 @@ const ChatInput = ({ onSend }) => {
   };
   return (
     <View style={styles.outerContainer}>
-      <View style={styles.inputContainer}>
+      <View style={[styles.inputContainer,hasfile&&styles.inputContainerWithFile]}>
+        {hasfile && (
+          <View style={styles.filePreview}>
+            <Text>{selectedFile.name || selectedFile.fileName}</Text>
+            <TouchableOpacity onPress={() => {setSelectedFile(null);sethasfile(false);}}>
+              <Text>❌</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         <TouchableOpacity style={styles.actionBtn} onPress={pickDocument} activeOpacity={0.7}>
           <Text style={styles.actionIcon}>➕</Text>
         </TouchableOpacity>
@@ -197,4 +209,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  inputContainerWithFile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(34, 42, 61, 0.7)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 28,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    gap: 8,
+  }
 });
