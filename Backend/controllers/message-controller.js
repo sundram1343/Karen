@@ -1,69 +1,52 @@
 const Message=require('../models/message-model');
 const Chat=require('../models/chat-model');
 const User=require('../models/user-model');
+const path = require('path');
 const {message}= require('../config/groq-config')
-const sendmessage=async(req,res)=>{
-    try{
-        let {usermessage,chatid}=req.body;
-        const userid=req.user._id;
-        if(!usermessage){
-            return res.status(400).json({message:'Message content is required'});
-        }
-        const file = req.file ? {
-            filename: req.file.originalname,
-            path: `/uploads/${userid}/${req.file.filename}`,
-            mimetype: req.file.mimetype,
-            size: req.file.size
-        } : null;
-        if(!chatid){
-            const chatName = usermessage.length > 25 ? usermessage.substring(0, 25) + '...' : usermessage;
-            const chat=await Chat.create({
-                user:userid,
-                name: chatName
-            });
-            await User.findByIdAndUpdate(userid,{$push:{chat:chat._id}});
-            chatid=chat._id;
-        } else {
-            const existingChat = await Chat.findById(chatid);
-            if (existingChat && !existingChat.name) {
-                const chatName = usermessage.length > 25 ? usermessage.substring(0, 25) + '...' : usermessage;
-                await Chat.findByIdAndUpdate(chatid, { name: chatName });
-            }
-        }
-        const history =await Message.find({chat:chatid}).sort({createdAt:1}).limit(20).lean();
-        const historyPayload = [
-            { 
-                role: "system", content: "You are Karen, a helpful assistant." },
-                ...history.map(m => ({
-                role: m.sender === 'user' ? 'user' : 'assistant',
-                content: m.content,
-            }
-        )),
-            { 
-                role: 'user', 
-                content: usermessage || `Uploaded file: ${file.filename}`,...(file ? { file: file.path } : {})
-            }
-        ];
-        const responsemessage= await message(historyPayload);
-        const newusermessage=await Message.create({
-            chat:chatid,
-            content:usermessage,
-            file:file,
-            sender:'user',
+const sendmessage = async (req, res) => {
+  try {
+    let { usermessage, chatid } = req.body;
+    const userid = req.user._id.toString();
+    if (!usermessage && !req.file) {
+      return res.status(400).json({ message: 'Message content or file is required' });
+    }
+    if(!chatid){
+        const chat=await Chat.create({
+            user:userid,
+            name:req.file?req.file.originalname:usermessage.substring(0,20),
         });
-        const newAImessage=await Message.create({
-            chat:chatid,
-            content:responsemessage,
-            sender:'Karen',
-        }); 
-        await Chat.findByIdAndUpdate(chatid,{ $push: { messages: { $each: [newusermessage._id, newAImessage._id] } } });
-        return res.status(200).json({message:'Message Sent Successfully',chatid,newusermessage,newAImessage});
+        chatid=chat._id;
+        await User.findByIdAndUpdate(userid, {
+            $push: { chats: chatid }
+        });
     }
-    catch(error){
-        console.error("sendmessage error:", error);
-        return res.status(500).json({message:'Internal Server Error'});
-    }
-}
+    const filepath = req.file ? path.join(__dirname, '..', 'uploads', userid, req.file.filename) : null;
+    const responsemessage = await message(usermessage || '', filepath);
+    const newusermessage = await Message.create({
+      chat: chatid,
+      content: usermessage || '',
+      file: req.file ? {
+        filename: req.file.originalname,
+        path: `/uploads/${userid}/${req.file.filename}`,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      } : null,
+      sender: 'user',
+    });
+    const newAImessage = await Message.create({
+      chat: chatid,
+      content: responsemessage,
+      sender: 'Karen',
+    });
+    await Chat.findByIdAndUpdate(chatid, {
+      $push: { messages: { $each: [newusermessage._id, newAImessage._id] } }
+    });
+    return res.status(200).json({ message: 'Message Sent Successfully', chatid, newusermessage, newAImessage });
+  } catch (error) {
+    console.error("sendmessage error:", error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
 const getChats=async(req,res)=>{
     try{
         const userid=req.user._id;

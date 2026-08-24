@@ -6,7 +6,13 @@ const MessageBubble = ({ message }) => {
     return (
       <View style={styles.userWrapper}>
         <View style={styles.userBubble}>
-          <Text style={styles.userText}>{message.text}</Text>
+          {message.text ? <Text style={styles.userText}>{message.text}</Text> : null}
+          {message.file && (
+            <View style={styles.fileAttachmentContainer}>
+              <Text style={styles.fileIcon}>📄</Text>
+              <Text style={styles.fileName}>{message.file.filename}</Text>
+            </View>
+          )}
           <View style={styles.userMeta}>
             <Text style={styles.userTime}>{message.status || `Read ${message.time}`}</Text>
           </View>
@@ -227,5 +233,24 @@ const styles = StyleSheet.create({
   },
   pinkText: {
     color: '#ffb4ab',
+  },
+  fileAttachmentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginTop: 6,
+    gap: 8,
+    alignSelf: 'flex-start',
+  },
+  fileIcon: {
+    fontSize: 16,
+  },
+  fileName: {
+    color: '#dae2fd',
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

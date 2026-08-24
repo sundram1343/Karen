@@ -16,29 +16,51 @@ const Home = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const scrollViewRef = useRef(null);
   const { token } = useContext(AuthContext);
-  const handleSend = async (msg,file) => {
-    if ((!msg || !msg.trim())) return;
+  const handleSend = async (msg, file) => {
+    if ((!msg || !msg.trim()) && !file) return;
     try {
       setIsTyping(true);
       const userMsg = {
         id: Date.now().toString(),
         sender: 'user',
-        text: msg,
+        text: msg || '',
+        file: file ? { filename: file.name || file.fileName || 'document' } : null,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setmessage((prev) => [...prev, userMsg]);
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
-      const res = await axios.post(BACKEND_URI+`/message/send`, {
-        usermessage: msg,
-        chatid,
-        file:file
-      }, {  
-        headers: {
-          Authorization: "Bearer " + token
+
+      let res;
+      if (file) {
+        const formData = new FormData();
+        formData.append('usermessage', msg || '');
+        if (chatid) {
+          formData.append('chatid', chatid);
         }
-      });
+        formData.append('file', {
+          uri: file.uri,
+          type: file.type || 'application/octet-stream',
+          name: file.name || file.fileName || 'document',
+        });
+        res = await axios.post(BACKEND_URI + `/message/send`, formData, {
+          headers: {
+            Authorization: "Bearer " + token,
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      } else {
+        res = await axios.post(BACKEND_URI + `/message/send`, {
+          usermessage: msg || '',
+          chatid,
+        }, {
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        });
+      }
+
       setchatid(res.data.chatid);
       const aiMsg = {
         id: res.data.newAImessage._id,
@@ -58,18 +80,19 @@ const Home = () => {
       }, 100);
     }
   };
-  const handleRecentThread=async(id)=>{
+  const handleRecentThread = async (id) => {
     setchatid(id);
-    try{
-      const res = await axios.get(BACKEND_URI+`/message/chat/${chatid}`,{
-        headers:{
-          Authorization:"Bearer "+token
+    try {
+      const res = await axios.get(BACKEND_URI + `/message/chat/${id}`, {
+        headers: {
+          Authorization: "Bearer " + token
         }
       });
       const formattedMessages = res.data.messages.map((msg) => ({
         id: msg._id,
         sender: msg.sender,
         text: msg.content,
+        file: msg.file,
         time: new Date(msg.createdAt).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",

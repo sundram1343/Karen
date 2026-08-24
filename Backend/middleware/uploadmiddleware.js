@@ -6,8 +6,8 @@ const Storage=multer.diskStorage({
         if (!file) {
             return cb(new Error('No file provided'), false);
         }
-        const user=req.user.id;
-        const uploadPath = path.join(__dirname, 'uploads', user._id.toString());
+        const userid=req.user.id || req.user._id.toString();
+        const uploadPath = path.join(__dirname, '..', 'uploads', userid);
         fs.mkdirSync(uploadPath, { recursive: true });
         cb(null, uploadPath);
     },

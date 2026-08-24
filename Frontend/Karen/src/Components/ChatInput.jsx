@@ -110,15 +110,22 @@ const ChatInput = ({ onSend }) => {
   };
   return (
     <View style={styles.outerContainer}>
-      <View style={[styles.inputContainer,hasfile&&styles.inputContainerWithFile]}>
-        {hasfile && (
-          <View style={styles.filePreview}>
-            <Text>{selectedFile.name || selectedFile.fileName}</Text>
-            <TouchableOpacity onPress={() => {setSelectedFile(null);sethasfile(false);}}>
-              <Text>❌</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+      {hasfile && (
+        <View style={styles.filePreview}>
+          <Text style={styles.fileIcon}>📄</Text>
+          <Text style={styles.filePreviewText} numberOfLines={1} ellipsizeMode="middle">
+            {selectedFile.name || selectedFile.fileName || 'document'}
+          </Text>
+          <TouchableOpacity 
+            style={styles.removeFileBtn} 
+            onPress={() => {setSelectedFile(null); sethasfile(false);}}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.removeFileText}>❌</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      <View style={styles.inputContainer}>
         <TouchableOpacity style={styles.actionBtn} onPress={pickDocument} activeOpacity={0.7}>
           <Text style={styles.actionIcon}>➕</Text>
         </TouchableOpacity>
@@ -209,15 +216,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  inputContainerWithFile: {
+  filePreview: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(34, 42, 61, 0.7)',
+    backgroundColor: 'rgba(34, 42, 61, 0.8)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
-    borderRadius: 28,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
     gap: 8,
+    maxWidth: '100%',
+  },
+  fileIcon: {
+    fontSize: 14,
+  },
+  filePreviewText: {
+    color: '#dae2fd',
+    fontSize: 14,
+    fontWeight: '500',
+    flexShrink: 1,
+  },
+  removeFileBtn: {
+    padding: 2,
+    marginLeft: 4,
+  },
+  removeFileText: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 11,
   }
 });
