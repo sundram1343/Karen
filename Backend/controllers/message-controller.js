@@ -3,6 +3,7 @@ const Chat=require('../models/chat-model');
 const User=require('../models/user-model');
 const path = require('path');
 const {message}= require('../config/groq-config')
+const actions =require('./action-service') 
 const sendmessage = async (req, res) => {
   try {
     let { usermessage, chatid } = req.body;
@@ -21,7 +22,16 @@ const sendmessage = async (req, res) => {
         });
     }
     const filepath = req.file ? path.join(__dirname, '..', 'uploads', userid, req.file.filename) : null;
-    const responsemessage = await message(usermessage || '', filepath);
+    const parsedResponse = await message(usermessage || '', filepath);
+    let finalResponse;
+    if(parsedResponse.type==="chat"){
+        finalResponse=parsedResponse.response;
+    }else if(parsedResponse.type==="action"){
+        const {function:func,parameter}=parsedResponse;
+        finalResponse = await actions[func](parameter);
+    }else{
+        finalResponse="Error: Unexpected response format.";
+    }
     const newusermessage = await Message.create({
       chat: chatid,
       content: usermessage || '',
@@ -35,7 +45,7 @@ const sendmessage = async (req, res) => {
     });
     const newAImessage = await Message.create({
       chat: chatid,
-      content: responsemessage,
+      content: finalResponse,
       sender: 'Karen',
     });
     await Chat.findByIdAndUpdate(chatid, {
