@@ -3,7 +3,6 @@ const Chat=require('../models/chat-model');
 const User=require('../models/user-model');
 const path = require('path');
 const {message}= require('../config/groq-config')
-const actions =require('./action-service') 
 const sendmessage = async (req, res) => {
   try {
     let { usermessage, chatid } = req.body;
@@ -23,15 +22,7 @@ const sendmessage = async (req, res) => {
     }
     const filepath = req.file ? path.join(__dirname, '..', 'uploads', userid, req.file.filename) : null;
     const parsedResponse = await message(usermessage || '', filepath);
-    let finalResponse;
-    if(parsedResponse.type==="chat"){
-        finalResponse=parsedResponse.response;
-    }else if(parsedResponse.type==="action"){
-        const {function:func,parameter}=parsedResponse;
-        finalResponse = await actions[func](parameter);
-    }else{
-        finalResponse="Error: Unexpected response format.";
-    }
+    let aimessage=parsedResponse.response;
     const newusermessage = await Message.create({
       chat: chatid,
       content: usermessage || '',
@@ -45,13 +36,13 @@ const sendmessage = async (req, res) => {
     });
     const newAImessage = await Message.create({
       chat: chatid,
-      content: finalResponse,
+      content: aimessage,
       sender: 'Karen',
     });
     await Chat.findByIdAndUpdate(chatid, {
       $push: { messages: { $each: [newusermessage._id, newAImessage._id] } }
     });
-    return res.status(200).json({ message: 'Message Sent Successfully', chatid, newusermessage, newAImessage });
+    return res.status(200).json({ message: 'Message Sent Successfully', chatid, newusermessage, newAImessage,parsedResponse });
   } catch (error) {
     console.error("sendmessage error:", error);
     return res.status(500).json({ message: 'Internal Server Error' });

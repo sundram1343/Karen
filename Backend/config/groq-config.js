@@ -6,7 +6,6 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 async function buildMessageFromFile(filepath) {
   const ext = path.extname(filepath).toLowerCase();
   let content = '';
-  
   if (ext === '.txt') {
     content = fs.readFileSync(filepath, 'utf8');
   } else if (ext === '.pdf') {
@@ -36,7 +35,8 @@ async function message(usermessage, filepath) {
       {
         "type": "action",
         "function": "<function_name>",
-        "parameter": "<value>"
+        "parameter": "<value>",
+        "response":"<your response text>"
       }
 
       If no action is required (conversational query):

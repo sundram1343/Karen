@@ -8,6 +8,8 @@ import ChatInput from '../Components/ChatInput';
 import axios from 'axios';
 import { AuthContext } from '../App';
 import { BACKEND_URI } from '@env';
+import action from '../services/action';
+
 const Home = () => {
   const [message, setmessage] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -69,6 +71,19 @@ const Home = () => {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setmessage((prev) => [...prev, aiMsg]);
+
+      // Execute action if type is "action"
+      if (res.data.parsedResponse && res.data.parsedResponse.type === 'action') {
+        const actionType = res.data.parsedResponse.function;
+        const parameter = res.data.parsedResponse.parameter;
+        if (actionType && parameter) {
+          try {
+            await action({ actionType, Name: parameter });
+          } catch (err) {
+            console.log("Failed to execute action:", err);
+          }
+        }
+      }
     }
     catch (error) {
       console.log("Error sending message:", error);
