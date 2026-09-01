@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Karen</string>
+    <string name="accessibility_service_description">Karen uses accessibility access to understand and automate user-requested actions across apps.</string>
 </resources>
