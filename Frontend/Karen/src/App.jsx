@@ -1,5 +1,5 @@
 import React, { useState, useEffect, createContext } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet ,NativeModules,Button,View} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
@@ -7,11 +7,11 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Login from './AuthScreens/Login';
 import SignUp from './AuthScreens/SignUp';
 import Home from './Home/Home';
-
+const { DeviceAutomation,AppLauncher } = NativeModules;
 const Stack = createStackNavigator();
 export const AuthContext = createContext();
-
-const AuthStack = () => (
+  
+/*const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Login" component={Login} />
     <Stack.Screen name="SignUp" component={SignUp} />
@@ -23,9 +23,25 @@ const AppStack = () => (
     <Stack.Screen name="Home" component={Home} />
   </Stack.Navigator>
 );
-
+*/
 const App = () => {
-  const [token, setistoken] = useState(null);
+  const testClick = () => {
+
+  console.log("1. OPENING CHROME");
+
+  AppLauncher.openApp("Chrome");
+
+  setTimeout(() => {
+
+    console.log("2. TRYING CLICK");
+
+    DeviceAutomation.findAndClick(
+      "Search Google or type URL"
+    );
+
+  }, 4000);
+};
+  /*const [token, setistoken] = useState(null);
 
   useEffect(() => {
     const getToken = async () => {
@@ -39,10 +55,10 @@ const App = () => {
       }
     };
     getToken();
-  }, []);
+  }, []);*/
 
   return (
-    <AuthContext.Provider value={{ token, setistoken }}>
+    /*<AuthContext.Provider value={{ token, setistoken }}>
       <SafeAreaProvider>
         <SafeAreaView style={styles.flexContainer}>
           <NavigationContainer>
@@ -50,7 +66,13 @@ const App = () => {
           </NavigationContainer>
         </SafeAreaView>
       </SafeAreaProvider>
-    </AuthContext.Provider>
+    </AuthContext.Provider>*/
+    <View style={{flex: 1, justifyContent: 'center'}}>
+      <Button
+        title="Test Karen Click"
+        onPress={testClick}
+      />
+    </View>
   );
 };
 
