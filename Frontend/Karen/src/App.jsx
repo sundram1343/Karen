@@ -35,6 +35,9 @@ const App = () => {
   setTimeout(() => {
     AppLauncher.openApp("Chrome");
   }, 300);
+  setTimeout(()=>{
+    DeviceAutomation.pressEnter();
+  },2500);
 };
   /*const [token, setistoken] = useState(null);
 

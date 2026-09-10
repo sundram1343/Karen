@@ -81,4 +81,9 @@ fun typeWhenAppOpens(
         value
     )
 }
+    @ReactMethod
+    fun pressEnter():Boolean{
+        Log.e("DEVICE_AUTOMATION","PRESS ENTER REQUEST")
+        KarenAccessibilityService.instance?.pressEnter()
+    }
 }
