@@ -7,61 +7,223 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
 class KarenAccessibilityService : AccessibilityService() {
-    private var currentPackage: String? = null
-    
+
     companion object {
         var instance: KarenAccessibilityService? = null
     }
 
+    // -----------------------------
+    // Pending CLICK action
+    // -----------------------------
+
+    private var pendingPackage: String? = null
+    private var pendingText: String? = null
+
+    // -----------------------------
+    // Pending TYPE action
+    // -----------------------------
+
+    private var pendingTypeTarget: String? = null
+    private var pendingTypeValue: String? = null
+
+
+    // =========================================================
+    // SERVICE CONNECTED
+    // =========================================================
+
     override fun onServiceConnected() {
         super.onServiceConnected()
-        
+
         instance = this
 
-        Log.e("KAREN_TEST", "ACCESSIBILITY CONNECTED")
-    }
-
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-
-        if (event == null) return
-        currentPackage = event.packageName?.toString()
         Log.e(
             "KAREN_TEST",
-            "EVENT -> type=${event.eventType}, package=${event.packageName}, package=$currentPackage"
+            "ACCESSIBILITY CONNECTED"
         )
     }
-    fun waitForPackage(
-    packageName: String,
-    timeout: Long = 5000
-): Boolean {
 
-    val startTime = System.currentTimeMillis()
 
-    while (System.currentTimeMillis() - startTime < timeout) {
+    // =========================================================
+    // ACCESSIBILITY EVENTS
+    // =========================================================
 
-        if (currentPackage == packageName) {
+    override fun onAccessibilityEvent(
+        event: AccessibilityEvent?
+    ) {
+
+        if (event == null) return
+
+        val packageName =
+            event.packageName?.toString()
+
+        Log.e(
+            "KAREN_TEST",
+            "EVENT -> type=${event.eventType}, package=$packageName"
+        )
+
+
+        // =====================================================
+        // CLICK ACTION
+        // =====================================================
+
+        if (
+            packageName == pendingPackage &&
+            pendingText != null
+        ) {
+
             Log.e(
                 "DEVICE_AUTOMATION",
-                "TARGET PACKAGE ACTIVE: $packageName"
+                "TARGET APP DETECTED: $packageName"
             )
-            return true
+
+            val root = rootInActiveWindow
+
+            if (root == null) {
+
+                Log.e(
+                    "DEVICE_AUTOMATION",
+                    "ROOT NULL"
+                )
+
+                return
+            }
+
+            Log.e(
+                "DEVICE_AUTOMATION",
+                "ROOT FOUND: ${root.packageName}"
+            )
+
+            val target = pendingText!!
+
+            val node = findText(
+                root,
+                target
+            )
+
+            if (node != null) {
+
+                Log.e(
+                    "DEVICE_AUTOMATION",
+                    "TARGET FOUND: ${node.text}"
+                )
+
+                val result = clickNode(node)
+
+                Log.e(
+                    "DEVICE_AUTOMATION",
+                    "CLICK RESULT: $result"
+                )
+
+                // Clear pending click
+                pendingPackage = null
+                pendingText = null
+
+            } else {
+
+                Log.e(
+                    "DEVICE_AUTOMATION",
+                    "TARGET NOT FOUND YET: $target"
+                )
+            }
         }
 
-        Thread.sleep(100)
+
+        // =====================================================
+        // TYPE ACTION
+        // =====================================================
+
+        if (
+            packageName == pendingPackage &&
+            pendingTypeTarget != null &&
+            pendingTypeValue != null
+        ) {
+
+            Log.e(
+                "DEVICE_AUTOMATION",
+                "TYPE TARGET APP DETECTED: $packageName"
+            )
+
+            val root = rootInActiveWindow
+
+            if (root == null) {
+
+                Log.e(
+                    "DEVICE_AUTOMATION",
+                    "TYPE ROOT NULL"
+                )
+
+                return
+            }
+
+            Log.e(
+                "DEVICE_AUTOMATION",
+                "TYPE ROOT FOUND: ${root.packageName}"
+            )
+
+            val target = pendingTypeTarget!!
+
+            val value = pendingTypeValue!!
+
+            val node = findText(
+                root,
+                target
+            )
+
+            if (node != null) {
+
+                Log.e(
+                    "DEVICE_AUTOMATION",
+                    "TYPE TARGET FOUND: ${node.text}"
+                )
+
+                // Click the input field first
+                clickNode(node)
+
+                // Type the requested text
+                val result = typeText(
+                    node,
+                    value
+                )
+
+                Log.e(
+                    "DEVICE_AUTOMATION",
+                    "TYPE RESULT: $result"
+                )
+
+                // Clear pending type action
+                pendingPackage = null
+                pendingTypeTarget = null
+                pendingTypeValue = null
+
+            } else {
+
+                Log.e(
+                    "DEVICE_AUTOMATION",
+                    "TYPE TARGET NOT FOUND YET: $target"
+                )
+            }
+        }
     }
 
-    Log.e(
-        "DEVICE_AUTOMATION",
-        "TIMEOUT WAITING FOR: $packageName"
-    )
-
-    return false
-}
 
     // =========================================================
     // FIND TEXT
     // =========================================================
-
+    fun pressEnter():Boolean{
+        val root=rootInActiveWindow
+        if(!root){
+            Log.e("DEVICE_AUTOMATION","ROOT IS NULL")
+            return false
+        }
+        val focusedNode=root.findfoucus(AccessibilityNodeInfo.FOCUS_INPUT)
+        if(focusedNode){
+            val result=focusedNode.performAction(AccessibilityNodeInfo.ACTION_IME_ENTER)
+            Log.e("DEVICE_AUTOMATION","ENTER RESULT: $result")
+            return result;
+        }
+        Log.e("DEVICE_AUTOMATION","NO INPUT FOCUS FOUND")
+        return false
+    }
     private fun findText(
         node: AccessibilityNodeInfo?,
         target: String
@@ -69,21 +231,46 @@ class KarenAccessibilityService : AccessibilityService() {
 
         if (node == null) return null
 
-        val text = node.text?.toString()
-        val description = node.contentDescription?.toString()
+        val text =
+            node.text?.toString()
 
+        val description =
+            node.contentDescription?.toString()
+
+
+        // Check text
         if (
-            text?.contains(target, ignoreCase = true) == true ||
-            description?.contains(target, ignoreCase = true) == true
+            text?.contains(
+                target,
+                ignoreCase = true
+            ) == true
         ) {
             return node
         }
 
+
+        // Check content description
+        if (
+            description?.contains(
+                target,
+                ignoreCase = true
+            ) == true
+        ) {
+            return node
+        }
+
+
+        // Search children
         for (i in 0 until node.childCount) {
 
-            val child = node.getChild(i)
+            val child =
+                node.getChild(i)
 
-            val result = findText(child, target)
+            val result =
+                findText(
+                    child,
+                    target
+                )
 
             if (result != null) {
                 return result
@@ -93,6 +280,7 @@ class KarenAccessibilityService : AccessibilityService() {
         return null
     }
 
+
     // =========================================================
     // CLICK NODE
     // =========================================================
@@ -101,9 +289,12 @@ class KarenAccessibilityService : AccessibilityService() {
         node: AccessibilityNodeInfo?
     ): Boolean {
 
-        if (node == null) return false
+        if (node == null) {
+            return false
+        }
 
-        // Try clicking the node itself
+
+        // Direct click
         if (node.isClickable) {
 
             return node.performAction(
@@ -111,9 +302,10 @@ class KarenAccessibilityService : AccessibilityService() {
             )
         }
 
-        // If node itself isn't clickable,
-        // try its parent
-        val parent = node.parent
+
+        // Try parent
+        val parent =
+            node.parent
 
         if (parent != null) {
 
@@ -128,6 +320,7 @@ class KarenAccessibilityService : AccessibilityService() {
         return false
     }
 
+
     // =========================================================
     // TYPE TEXT
     // =========================================================
@@ -137,12 +330,16 @@ class KarenAccessibilityService : AccessibilityService() {
         text: String
     ): Boolean {
 
-        if (node == null) return false
+        if (node == null) {
+            return false
+        }
 
-        val arguments = Bundle()
+        val arguments =
+            Bundle()
 
         arguments.putCharSequence(
-            AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+            AccessibilityNodeInfo
+                .ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
             text
         )
 
@@ -151,6 +348,7 @@ class KarenAccessibilityService : AccessibilityService() {
             arguments
         )
     }
+
 
     // =========================================================
     // FIND AND CLICK
@@ -165,12 +363,8 @@ class KarenAccessibilityService : AccessibilityService() {
             "findAndClick received: $text"
         )
 
-        Log.e(
-            "DEVICE_AUTOMATION",
-            "SERVICE INSTANCE: $this"
-        )
-
-        val root = rootInActiveWindow
+        val root =
+            rootInActiveWindow
 
         if (root == null) {
 
@@ -187,10 +381,11 @@ class KarenAccessibilityService : AccessibilityService() {
             "ROOT FOUND: ${root.packageName}"
         )
 
-        val node = findText(
-            root,
-            text
-        )
+        val node =
+            findText(
+                root,
+                text
+            )
 
         if (node == null) {
 
@@ -207,7 +402,8 @@ class KarenAccessibilityService : AccessibilityService() {
             "NODE FOUND: ${node.text}"
         )
 
-        val result = clickNode(node)
+        val result =
+            clickNode(node)
 
         Log.e(
             "DEVICE_AUTOMATION",
@@ -216,6 +412,7 @@ class KarenAccessibilityService : AccessibilityService() {
 
         return result
     }
+
 
     // =========================================================
     // FIND AND TYPE
@@ -231,7 +428,8 @@ class KarenAccessibilityService : AccessibilityService() {
             "findAndType received: $target -> $value"
         )
 
-        val root = rootInActiveWindow
+        val root =
+            rootInActiveWindow
 
         if (root == null) {
 
@@ -243,10 +441,11 @@ class KarenAccessibilityService : AccessibilityService() {
             return false
         }
 
-        val node = findText(
-            root,
-            target
-        )
+        val node =
+            findText(
+                root,
+                target
+            )
 
         if (node == null) {
 
@@ -258,18 +457,15 @@ class KarenAccessibilityService : AccessibilityService() {
             return false
         }
 
-        Log.e(
-            "DEVICE_AUTOMATION",
-            "NODE FOUND: ${node.text}"
-        )
-
-        // Click/focus the field first
+        // Click input
         clickNode(node)
 
-        val result = typeText(
-            node,
-            value
-        )
+        // Type
+        val result =
+            typeText(
+                node,
+                value
+            )
 
         Log.e(
             "DEVICE_AUTOMATION",
@@ -279,8 +475,95 @@ class KarenAccessibilityService : AccessibilityService() {
         return result
     }
 
+
     // =========================================================
-    // INTERRUPT
+    // CLICK WHEN APP OPENS
+    // =========================================================
+
+    fun clickWhenAppOpens(
+        packageName: String,
+        text: String
+    ) {
+
+        pendingPackage = packageName
+        pendingText = text
+
+        Log.e(
+            "DEVICE_AUTOMATION",
+            "WAITING FOR: $packageName"
+        )
+    }
+
+
+    // =========================================================
+    // TYPE WHEN APP OPENS
+    // =========================================================
+
+    fun typeWhenAppOpens(
+        packageName: String,
+        target: String,
+        value: String
+    ) {
+
+        pendingPackage = packageName
+
+        pendingTypeTarget = target
+
+        pendingTypeValue = value
+
+        Log.e(
+            "DEVICE_AUTOMATION",
+            "WAITING TO TYPE: $packageName -> $target"
+        )
+    }
+
+
+    // =========================================================
+    // WAIT FOR APP
+    // =========================================================
+
+    fun waitForApp(
+        packageName: String,
+        timeout: Long = 5000
+    ): Boolean {
+
+        val start =
+            System.currentTimeMillis()
+
+        while (
+            System.currentTimeMillis() - start < timeout
+        ) {
+
+            val root =
+                rootInActiveWindow
+
+            if (
+                root?.packageName?.toString()
+                    == packageName
+            ) {
+
+                Log.e(
+                    "DEVICE_AUTOMATION",
+                    "APP ACTIVE: $packageName"
+                )
+
+                return true
+            }
+
+            Thread.sleep(100)
+        }
+
+        Log.e(
+            "DEVICE_AUTOMATION",
+            "APP TIMEOUT: $packageName"
+        )
+
+        return false
+    }
+
+
+    // =========================================================
+    // SERVICE INTERRUPTED
     // =========================================================
 
     override fun onInterrupt() {
@@ -291,8 +574,9 @@ class KarenAccessibilityService : AccessibilityService() {
         )
     }
 
+
     // =========================================================
-    // DESTROY
+    // SERVICE DESTROYED
     // =========================================================
 
     override fun onDestroy() {

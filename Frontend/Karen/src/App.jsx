@@ -25,21 +25,16 @@ const AppStack = () => (
 );
 */
 const App = () => {
-  const testClick = () => {
-
-  console.log("1. OPENING CHROME");
-
-  AppLauncher.openApp("Chrome");
+ const testType = () => {
+  DeviceAutomation.typeWhenAppOpens(
+    "com.android.chrome",
+    "Search Google or type URL",
+    "React Native tutorials"
+  );
 
   setTimeout(() => {
-
-    console.log("2. TRYING CLICK");
-
-    DeviceAutomation.findAndClick(
-      "Search Google or type URL"
-    );
-
-  }, 4000);
+    AppLauncher.openApp("Chrome");
+  }, 300);
 };
   /*const [token, setistoken] = useState(null);
 
@@ -70,7 +65,7 @@ const App = () => {
     <View style={{flex: 1, justifyContent: 'center'}}>
       <Button
         title="Test Karen Click"
-        onPress={testClick}
+        onPress={testType}
       />
     </View>
   );
