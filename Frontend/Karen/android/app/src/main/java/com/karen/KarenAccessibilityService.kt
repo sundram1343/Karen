@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-
+import android.view.KeyEvent
 class KarenAccessibilityService : AccessibilityService() {
 
     companion object {
@@ -209,20 +209,20 @@ class KarenAccessibilityService : AccessibilityService() {
     // =========================================================
     // FIND TEXT
     // =========================================================
-    fun pressEnter():Boolean{
+    fun pressEnter(){
         val root=rootInActiveWindow
-        if(!root){
-            Log.e("DEVICE_AUTOMATION","ROOT IS NULL")
-            return false
+        if(root==null){
+            Log.e("DEVICE_AUTOMATION","ENTER: ROOT NULL")
+            return 
         }
-        val focusedNode=root.findfoucus(AccessibilityNodeInfo.FOCUS_INPUT)
-        if(focusedNode){
-            val result=focusedNode.performAction(AccessibilityNodeInfo.ACTION_IME_ENTER)
-            Log.e("DEVICE_AUTOMATION","ENTER RESULT: $result")
-            return result;
+        val searchNode = findText(root, "Search")
+        if(searchNode!=null){
+            Log.e("DEVICE_AUTOMATION","ENTER: FOUND = ${searchNode.text}")
+            val result = clickNode(searchNode)
+            Log.e("DEVICE_AUTOMATION","ENTER: CLICK RESULT = $result")
+            return;
         }
-        Log.e("DEVICE_AUTOMATION","NO INPUT FOCUS FOUND")
-        return false
+        Log.e("DEVICE_AUTOMATION","ENTER: SEARCH BUTTON NOT FOUND")
     }
     private fun findText(
         node: AccessibilityNodeInfo?,

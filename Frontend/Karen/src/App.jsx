@@ -26,19 +26,23 @@ const AppStack = () => (
 */
 const App = () => {
  const testType = () => {
-  DeviceAutomation.typeWhenAppOpens(
-    "com.android.chrome",
-    "Search Google or type URL",
-    "React Native tutorials"
-  );
+    try{
+    DeviceAutomation.typeWhenAppOpens(
+      "com.android.chrome",
+      "Search Google or type URL",
+      "React Native tutorials"
+    );
 
-  setTimeout(() => {
-    AppLauncher.openApp("Chrome");
-  }, 300);
-  setTimeout(()=>{
-    DeviceAutomation.pressEnter();
-  },2500);
-};
+    setTimeout(() => {
+      AppLauncher.openApp("Chrome");
+    }, 300);
+    }catch(err){
+      console.log(err);
+    }
+    setTimeout(()=>{
+      DeviceAutomation.pressEnter();
+    },500);
+  };
   /*const [token, setistoken] = useState(null);
 
   useEffect(() => {
