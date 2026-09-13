@@ -15,7 +15,7 @@ class MainApplication : Application(), ReactApplication {
       packageList =
         PackageList(this).packages.apply {
           add(AppLauncherPackage())
-          add(DeviceAutomationPackage())
+          //add(DeviceAutomationPackage())
         },
     )
   }

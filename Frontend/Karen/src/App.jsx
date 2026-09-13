@@ -7,7 +7,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import Login from './AuthScreens/Login';
 import SignUp from './AuthScreens/SignUp';
 import Home from './Home/Home';
-const { DeviceAutomation,AppLauncher } = NativeModules;
+//const { DeviceAutomation,AppLauncher } = NativeModules;
 const Stack = createStackNavigator();
 export const AuthContext = createContext();
   
@@ -26,7 +26,7 @@ const AppStack = () => (
 */
 const App = () => {
  const testType = () => {
-    try{
+    /*try{
     DeviceAutomation.typeWhenAppOpens(
       "com.android.chrome",
       "Search Google or type URL",
@@ -42,6 +42,7 @@ const App = () => {
     setTimeout(()=>{
       DeviceAutomation.pressEnter();
     },500);
+    */
   };
   /*const [token, setistoken] = useState(null);
 
