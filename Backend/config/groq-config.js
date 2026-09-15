@@ -19,18 +19,16 @@ async function buildMessageFromFile(filepath) {
   return { role: 'user', content: `Attached File Content:\n${content}` };
 }
 async function message(usermessage, filepath) {
+
   try {
     const fileMessage = filepath ? await buildMessageFromFile(filepath) : null;
-
     const systemPrompt = `You are an AI virtual assistant intent parser.
       Analyze the user command and determine if an action is needed.
-
       Available Functions:
       - openApp (parameter: appName)
+      - openAppAndType (parameter: appName, textToType)
       - searchWeb (parameter: query)
-
       You MUST respond strictly with a JSON object.
-
       If the command requires an action:
       {
         "type": "action",
@@ -38,7 +36,6 @@ async function message(usermessage, filepath) {
         "parameter": "<value>",
         "response":"<your response text>"
       }
-
       If no action is required (conversational query):
       {
         "type": "chat",

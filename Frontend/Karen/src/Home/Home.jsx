@@ -1,5 +1,5 @@
 import React, { useState, useRef, useContext } from 'react';
-import { StyleSheet, Text, View, ScrollView, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, KeyboardAvoidingView, Platform, SafeAreaView, NativeModules } from 'react-native';
 import ChatHeader from '../Components/ChatHeader';
 import NavDrawer from '../Components/NavDrawer';
 import MessageBubble from '../Components/MessageBubble';
@@ -8,8 +8,7 @@ import ChatInput from '../Components/ChatInput';
 import axios from 'axios';
 import { AuthContext } from '../App';
 import { BACKEND_URI } from '@env';
-import action from '../services/action';
-
+import action from '../services/actions';
 const Home = () => {
   const [message, setmessage] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -62,7 +61,6 @@ const Home = () => {
           },
         });
       }
-
       setchatid(res.data.chatid);
       const aiMsg = {
         id: res.data.newAImessage._id,
@@ -71,14 +69,13 @@ const Home = () => {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setmessage((prev) => [...prev, aiMsg]);
-
-      // Execute action if type is "action"
       if (res.data.parsedResponse && res.data.parsedResponse.type === 'action') {
         const actionType = res.data.parsedResponse.function;
         const parameter = res.data.parsedResponse.parameter;
+        const textToType = res.data.parsedResponse.textToType||'';
         if (actionType && parameter) {
           try {
-            await action({ actionType, Name: parameter });
+            await action({ actionType, Name: parameter,textToType:textToType });
           } catch (err) {
             console.log("Failed to execute action:", err);
           }

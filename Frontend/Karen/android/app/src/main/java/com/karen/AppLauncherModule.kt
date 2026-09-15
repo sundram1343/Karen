@@ -49,4 +49,39 @@ class AppLauncherModule(
             )
         }
     }
+
+    @ReactMethod
+    fun openAppAndType(appName: String, textToType: String, promise: Promise) {
+        try {
+            val packageManager = reactApplicationContext.packageManager
+            val packages = packageManager.getInstalledApplications(
+                PackageManager.GET_META_DATA
+            )
+            for (app in packages) {
+                val label = packageManager
+                    .getApplicationLabel(app)
+                    .toString()
+                if (label.equals(appName.trim(), ignoreCase = true)) {
+                    val intent = packageManager
+                        .getLaunchIntentForPackage(app.packageName)
+                    if (intent != null) {
+                        KarenAccessibilityService.instance?.pendingPackage = app.packageName
+                        KarenAccessibilityService.instance?.pendingText = textToType
+
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        reactApplicationContext.startActivity(intent)
+                        promise.resolve(true)
+                        return
+                    }
+                }
+            }
+            promise.resolve(false)
+        } catch (e: Exception) {
+            promise.reject(
+                "APP_LAUNCH_ERROR",
+                e.message,
+                e
+            )
+        }
+    }
 }
