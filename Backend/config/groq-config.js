@@ -34,6 +34,7 @@ async function message(usermessage, filepath) {
         "type": "action",
         "function": "<function_name>",
         "parameter": "<value>",
+        "textToType": "<text to type, if applicable>",
         "response":"<your response text>"
       }
       If no action is required (conversational query):
