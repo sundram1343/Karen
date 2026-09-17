@@ -1,10 +1,9 @@
-# Karen
-
-![GitHub stars](https://img.shields.io/github/stars/sundram1343/Karen?style=for-the-badge&logo=github) ![GitHub forks](https://img.shields.io/github/forks/sundram1343/Karen?style=for-the-badge&logo=github) ![GitHub issues](https://img.shields.io/github/issues/sundram1343/Karen?style=for-the-badge&logo=github) ![Last commit](https://img.shields.io/github/last-commit/sundram1343/Karen?style=for-the-badge&logo=github)
+# karen
 
 ## 📑 Table of Contents
 
 - [Description](#description)
+- [Screenshots](#screenshots)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Quick Start](#quick-start)
@@ -17,13 +16,17 @@
 
 ## 📝 Description
 
-Karen — a mobile app built with Android (Native), Express.js, Java (Gradle), JavaScript, Kotlin, MongoDB, Ruby, iOS (Native).
+karen — a mobile app built with Android (Native), Express.js, Java (Gradle), JavaScript, Kotlin, MongoDB, Ruby, iOS (Native).
+
+## 📸 Screenshots
+
+![LoginScreen](Frontend/Karen/src/assets/LoginScreen.png)
 
 ## 🛠️ Tech Stack
 
 ![Android (Native)](https://img.shields.io/badge/Android%20(Native)-3DDC84?style=for-the-badge&logo=android&logoColor=white) ![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white) ![Java (Gradle)](https://img.shields.io/badge/Java%20(Gradle)-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white) ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=white) ![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white) ![Ruby](https://img.shields.io/badge/Ruby-CC342D?style=for-the-badge&logo=ruby&logoColor=white) ![iOS (Native)](https://img.shields.io/badge/iOS%20(Native)-000000?style=for-the-badge&logo=apple&logoColor=white)
 
-**Notable libraries:** Mongoose
+**Notable libraries:** Mongoose, Multer
 
 ## 🏗️ Architecture
 
@@ -43,7 +46,7 @@ flowchart TD
 ```bash
 
 # 1. Clone the repository
-git clone https://github.com/sundram1343/Karen.git
+git clone https:\\github.com\sundram1343\karen.git
 
 # 2. Install dependencies
 npm install
@@ -62,7 +65,10 @@ express: ^5.2.1
 groq-sdk: ^1.5.0
 jsonwebtoken: ^9.0.3
 mongoose: ^9.9.0
+multer: ^2.2.0
 nodemon: ^3.1.14
+open: ^11.0.1
+pdf-parse: ^2.4.5
 ```
 
 ## 🌐 API Endpoints
@@ -90,7 +96,8 @@ GET /chat/:chatid
 │   │   ├── auth-controller.js
 │   │   └── message-controller.js
 │   ├── middleware
-│   │   └── authmiddleware.js
+│   │   ├── authmiddleware.js
+│   │   └── uploadmiddleware.js
 │   ├── models
 │   │   ├── chat-model.js
 │   │   ├── message-model.js
@@ -126,8 +133,10 @@ GET /chat/:chatid
         │   │   └── TypingIndicator.jsx
         │   ├── Home
         │   │   └── Home.jsx
-        │   └── assets
-        │       └── LoginScreen.png
+        │   ├── assets
+        │   │   └── LoginScreen.png
+        │   └── services
+        │       └── actions.jsx
         └── tsconfig.json
 ```
 
@@ -146,14 +155,12 @@ Thanks to everyone who has contributed to this project:
 <a href="https://github.com/sundram1343" title="sundram1343"><img src="https://avatars.githubusercontent.com/u/215622160?v=4&s=64" width="64" height="64" alt="sundram1343" style="border-radius:50%" /></a>
 </p>
 
-[See the full list of contributors →](https://github.com/sundram1343/Karen/graphs/contributors)
-
 ## 👥 Contributing
 
 Contributions are welcome! Here's the standard flow:
 
 1. **Fork** the repository
-2. **Clone** your fork: `git clone https://github.com/sundram1343/Karen.git`
+2. **Clone** your fork: `git clone https:\\github.com\sundram1343\karen.git`
 3. **Branch**: `git checkout -b feature/your-feature`
 4. **Commit**: `git commit -m 'feat: add some feature'`
 5. **Push**: `git push origin feature/your-feature`
