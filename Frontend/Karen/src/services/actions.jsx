@@ -36,8 +36,13 @@ const action = async ({ actionType, Name,textToType }) => {
       } catch (error) {
         console.error("Error in searchWeb", error);
       }
-      
       break;
+    case "PlayMusic":
+      try{
+        await AppLauncher.openAppAndType(safeName,safeText);
+      }catch(error){
+        console.error("Error in PlayMusic",error);
+      }
     default:
       console.log("No action found");
   }

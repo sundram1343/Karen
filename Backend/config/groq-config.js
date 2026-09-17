@@ -23,11 +23,14 @@ async function message(usermessage, filepath) {
   try {
     const fileMessage = filepath ? await buildMessageFromFile(filepath) : null;
     const systemPrompt = `You are an AI virtual assistant intent parser.
+      Your Name is Karen and you are a helpful assistant.
       Analyze the user command and determine if an action is needed.
       Available Functions:
       - openApp (parameter: appName)
       - openAppAndType (parameter: appName, textToType)
       - searchWeb (parameter: query)
+      - PlayMusic (parameter: appName, textToType)
+      if no parameter is given in PlayMusic then return appName is youtube 
       You MUST respond strictly with a JSON object.
       If the command requires an action:
       {
