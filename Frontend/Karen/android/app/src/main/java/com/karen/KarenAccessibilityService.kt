@@ -1,206 +1,568 @@
 package com.karen
-import android.view.accessibility.AccessibilityEvent
 import android.accessibilityservice.AccessibilityService
-import android.util.Log
-import android.view.accessibility.AccessibilityNodeInfo
 import android.os.Handler
 import android.os.Looper
-
-class KarenAccessibilityService:AccessibilityService(){
+import android.util.Log
+import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
+class KarenAccessibilityService : AccessibilityService() {
+    sealed class Command {
+        data class ClickNode(val target: String) : Command()
+        data class TypeText(val text: String) : Command()
+        object PressEnter : Command()
+        object ClickFirstResult : Command()
+        object FindInput : Command()
+        object GoBack : Command()
+        data class Scroll(val direction: String) : Command()
+    }
     companion object {
         var instance: KarenAccessibilityService? = null
     }
     var pendingPackage: String? = null
     var pendingText: String? = null
-    private var searchIconClicked: Boolean = false
-    private var pendingPlay: Boolean = false
-
-    override fun onServiceConnected(){
-        super.onServiceConnected()
-        instance=this
-        Log.e("TEST","ACCESSIBILITY SERVICE CONNECTED")
+    private var legacySearchIconClicked: Boolean = false
+    private var legacyPendingPlay: Boolean = false
+    private var currentCommand: Command? = null
+    private var commandCallback: ((Boolean) -> Unit)? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var retryCount = 0
+    private val maxRetries = 30
+    private val retryRunnable = object : Runnable {
+        override fun run() {
+            if (currentCommand != null) {
+                val executed = tryExecuteCurrentCommand()
+                if (!executed) {
+                    if (retryCount < maxRetries) {
+                        retryCount++
+                        mainHandler.postDelayed(
+                            this,
+                            150
+                        )
+                    } else {
+                        Log.e(
+                            "Karen",
+                            "Command timed out: $currentCommand"
+                        )
+                        clearCommand()
+                        fireCallback(false)
+                    }
+                }
+            }
+        }
     }
-
-    override fun onAccessibilityEvent(event:AccessibilityEvent?){
-        if(event==null) return
-        val packageName=event.packageName?.toString() ?: return
-        if(packageName != pendingPackage) return
-
-        Log.e("DEVICE_AUTOMATION", "Target app event: $packageName | searchIconClicked=$searchIconClicked | pendingPlay=$pendingPlay")
-
-        val root = getNode()
-        if(root == null){
-            Log.e("DEVICE_AUTOMATION","ROOT IS NULL")
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        instance = this
+        Log.e(
+            "Karen",
+            "Accessibility service CONNECTED"
+        )
+    }
+    override fun onInterrupt() {
+        Log.e(
+            "Karen",
+            "Accessibility service INTERRUPTED"
+        )
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        instance = null
+        mainHandler.removeCallbacksAndMessages(null)
+        Log.e(
+            "Karen",
+            "Accessibility service DESTROYED"
+        )
+    }
+    fun enqueueCommand(
+        command: Command,
+        callback: (Boolean) -> Unit
+    ) {
+        mainHandler.removeCallbacks(retryRunnable)
+        currentCommand = command
+        commandCallback = callback
+        retryCount = 0
+        Log.e(
+            "Karen",
+            "Command enqueued: $command"
+        )
+        mainHandler.post(retryRunnable)
+    }
+    override fun onAccessibilityEvent(
+        event: AccessibilityEvent?
+    ) {
+        if (event == null) return
+        if (currentCommand != null) {
+            tryExecuteCurrentCommand()
             return
         }
-        if (pendingPlay) {
-            val resultNode = findFirstPlayableResult(root)
+        val packageName =event.packageName?.toString() ?: return
+        if (packageName != pendingPackage) return
+        val root =rootInActiveWindow ?: return
+        if (legacyPendingPlay) {
+            val resultNode =findFirstPlayableResult(root)
             if (resultNode != null) {
-                Log.e("DEVICE_AUTOMATION", "Found first playable result — clicking to play")
+                Log.e(
+                    "Karen",
+                    "Legacy: found first playable result — clicking"
+                )
                 pendingPackage = null
-                pendingPlay = false
-                Handler(Looper.getMainLooper()).postDelayed({
-                    click(resultNode)
-                }, 800)
-            } else {
-                Log.e("DEVICE_AUTOMATION", "Results not loaded yet — waiting...")
+                legacyPendingPlay = false
+                mainHandler.postDelayed(
+                    {
+                        click(resultNode)
+                    },
+                    500
+                )
             }
             return
         }
-
         if (pendingText == null) return
-
-        if (searchIconClicked) {
-            val editableNode = findEditableNode(root)
+        if (legacySearchIconClicked) {
+            val editableNode =findEditableNode(root)
             if (editableNode != null) {
-                Log.e("DEVICE_AUTOMATION", "Found editable search field after icon click - typing")
-                val textToType = pendingText!!
+                val textToType =pendingText!!
                 pendingText = null
-                searchIconClicked = false
+                legacySearchIconClicked = false
                 editableNode.performAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS)
                 click(editableNode)
-                Handler(Looper.getMainLooper()).postDelayed({
-                    type(editableNode, textToType)
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        pressEnter(editableNode)
-                        pendingPlay = true
-                    }, 600)
-                }, 300)
-            } else {
-                Log.e("DEVICE_AUTOMATION", "Still waiting for search field to appear...")
+                mainHandler.postDelayed(
+                    {
+                        type(editableNode,textToType)
+                        mainHandler.postDelayed(
+                            {
+                                pressEnterOnNode(editableNode)
+                                legacyPendingPlay = true
+                            },
+                            400
+                        )
+                    },
+                    200
+                )
             }
             return
         }
-        val editableNode = findEditableNode(root)
+        val editableNode =findEditableNode(root)
         if (editableNode != null) {
-            Log.e("DEVICE_AUTOMATION", "Found editable node directly - typing")
-            val textToType = pendingText!!
+            val textToType =pendingText!!
             pendingText = null
-            searchIconClicked = false
+            legacySearchIconClicked = false
             editableNode.performAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS)
             click(editableNode)
-            Handler(Looper.getMainLooper()).postDelayed({
-                type(editableNode, textToType)
-                Handler(Looper.getMainLooper()).postDelayed({
-                    pressEnter(editableNode)
-                    pendingPlay = true
-                }, 600)
-            }, 300)
+            mainHandler.postDelayed(
+                {
+                    type(editableNode,textToType)
+                    mainHandler.postDelayed(
+                        {
+                            pressEnterOnNode(editableNode)
+                            legacyPendingPlay = true
+                        },
+                        400
+                    )
+                },
+                200
+            )
             return
         }
-        val searchNode = findSearchIconNode(root)
+        val searchNode =findSearchIconNode(root)
         if (searchNode != null) {
-            Log.e("DEVICE_AUTOMATION", "Found search icon - clicking to open search screen")
-            searchIconClicked = true
+            legacySearchIconClicked = true
             click(searchNode)
-        } else {
-            Log.e("DEVICE_AUTOMATION", "No editable node and no search icon found yet")
         }
     }
-
-    fun getNode():AccessibilityNodeInfo?{
-        return rootInActiveWindow
+    private fun tryExecuteCurrentCommand(): Boolean {
+        val cmd =currentCommand ?: return true
+        val root =rootInActiveWindow ?: return false
+        when (cmd) {
+            is Command.ClickNode -> {
+                val node =findNodeByTarget(root,cmd.target)
+                if (node != null) {
+                    Log.e(
+                        "Karen",
+                        "ClickNode: found '${cmd.target}' — clicking"
+                    )
+                    val success =click(node)
+                    if (!success) {
+                        return false
+                    }
+                    clearCommand()
+                    fireCallback(true)
+                    return true
+                }
+                return false
+            }
+            is Command.FindInput -> {
+                val editableNode =findEditableNode(root)
+                if (editableNode != null) {
+                    Log.e(
+                        "Karen",
+                        "FindInput: editable input found"
+                    )
+                    editableNode.performAction(
+                        AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS
+                    )
+                    click(editableNode)
+                    clearCommand()
+                    fireCallback(true)
+                    return true
+                }
+                return false
+            }
+            is Command.TypeText -> {
+                val editableNode =findEditableNode(root)
+                if (editableNode != null) {
+                    Log.e(
+                        "Karen",
+                        "TypeText: found editable — typing '${cmd.text}'"
+                    )
+                    editableNode.performAction(
+                        AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS
+                    )
+                    click(editableNode)
+                    val success =type(editableNode,cmd.text)
+                    if (!success) {
+                        return false
+                    }
+                    clearCommand()
+                    fireCallback(true)
+                    return true
+                }
+                return false
+            }
+            is Command.PressEnter -> {
+                val editableNode =findEditableNode(root)
+                if (editableNode != null) {
+                    Log.e(
+                        "Karen",
+                        "PressEnter: pressing enter"
+                    )
+                    val success =pressEnterOnNode(editableNode)
+                    if (!success) {
+                        return false
+                    }
+                    clearCommand()
+                    fireCallback(true)
+                    return true
+                }
+                return false
+            }
+            is Command.ClickFirstResult -> {
+                val resultNode =findFirstPlayableResult(root)
+                if (resultNode != null) {
+                    Log.e(
+                        "Karen",
+                        "ClickFirstResult: found result — clicking"
+                    )
+                    val success =click(resultNode)
+                    if (!success) {
+                        return false
+                    }
+                    clearCommand()
+                    fireCallback(true)
+                    return true
+                }
+                return false
+            }
+            is Command.GoBack -> {
+                Log.e(
+                    "Karen",
+                    "GoBack: performing global back"
+                )
+                val success =performGlobalAction( GLOBAL_ACTION_BACK)
+                if (!success) {
+                    return false
+                }
+                clearCommand()
+                fireCallback(true)
+                return true
+            }
+            is Command.Scroll -> {
+                val direction =cmd.direction.lowercase()
+                val action =
+                    when (direction) {
+                        "up" ->AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
+                        "down" ->AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
+                        else -> {
+                            Log.e(
+                                "Karen",
+                                "Unknown scroll direction: $direction"
+                            )
+                            return false
+                        }
+                    }
+                val scrollNode =
+                    findScrollableNode(root)
+                if (scrollNode != null) {
+                    Log.e(
+                        "Karen",
+                        "Scroll: $direction"
+                    )
+                    val success =scrollNode.performAction(action)
+                    if (!success) {
+                        return false
+                    }
+                    clearCommand()
+                    fireCallback(true)
+                    return true
+                }
+                return false
+            }
+        }
     }
-
-    fun findEditableNode(root: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+    private fun clearCommand() {
+        mainHandler.removeCallbacks(
+            retryRunnable
+        )
+        currentCommand = null
+    }
+    private fun fireCallback(
+        success: Boolean
+    ) {
+        val cb =commandCallback
+        commandCallback = null
+        mainHandler.post {
+            cb?.invoke(success)
+        }
+    }
+    private fun findNodeByTarget(
+        root: AccessibilityNodeInfo?,
+        target: String
+    ): AccessibilityNodeInfo? {
         if (root == null) return null
-        if (root.isEditable) {
+        val lTarget =target.lowercase()
+        val desc =root.contentDescription?.toString()?.lowercase()?: ""
+        val text =root.text?.toString()?.lowercase()?: ""
+        val viewId =root.viewIdResourceName?.lowercase()?: ""
+        val matches =desc.contains(lTarget) ||text.contains(lTarget) ||viewId.contains(lTarget)
+        if (matches) {
+            if (root.isClickable) {
+                return root
+            }
+            var parent =root.parent
+            while (parent != null) {
+                if (parent.isClickable) {
+                    return parent
+                }
+                parent =parent.parent
+            }
             return root
         }
         for (i in 0 until root.childCount) {
-            val child = root.getChild(i)
-            val result = findEditableNode(child)
-            if (result != null) return result
+            val child =
+                root.getChild(i)
+            val result =
+                findNodeByTarget(
+                    child,
+                    target
+                )
+            if (result != null) {
+                return result
+            }
         }
         return null
     }
-    fun findSearchIconNode(root: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+    fun findEditableNode(
+        root: AccessibilityNodeInfo?
+    ): AccessibilityNodeInfo? {
         if (root == null) return null
-        val contentDesc = root.contentDescription?.toString()?.lowercase() ?: ""
-        val text = root.text?.toString()?.lowercase() ?: ""
-        val viewId = root.viewIdResourceName?.lowercase() ?: ""
-
-        if (root.isClickable && !root.isEditable &&
-            (contentDesc.contains("search") || text.contains("search") || viewId.contains("search"))
+        if (
+            root.isEditable ||
+            root.className
+                ?.toString()
+                ?.contains(
+                    "EditText",
+                    ignoreCase = true
+                ) == true
         ) {
-            Log.e("DEVICE_AUTOMATION", "Search icon candidate: desc='$contentDesc' text='$text' id='$viewId'")
             return root
         }
         for (i in 0 until root.childCount) {
-            val child = root.getChild(i)
-            val result = findSearchIconNode(child)
-            if (result != null) return result
+            val result =
+                findEditableNode(
+                    root.getChild(i)
+                )
+            if (result != null) {
+                return result
+            }
         }
         return null
     }
-    fun findFirstPlayableResult(root: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+    fun findSearchIconNode(
+        root: AccessibilityNodeInfo?
+    ): AccessibilityNodeInfo? {
         if (root == null) return null
-        return findFirstPlayableResultInternal(root, depth = 0)
+        val desc =root.contentDescription?.toString()?.lowercase()?: ""
+        val text =root.text?.toString()?.lowercase()?: ""
+        val viewId =root.viewIdResourceName?.lowercase()?: ""
+        if (
+            root.isClickable &&
+            !root.isEditable &&
+            (
+                desc.contains("search") ||
+                text.contains("search") ||
+                viewId.contains("search")
+            )
+        ) {
+            return root
+        }
+        for (i in 0 until root.childCount) {
+            val result =
+                findSearchIconNode(
+                    root.getChild(i)
+                )
+            if (result != null) {
+                return result
+            }
+        }
+        return null
     }
-
+    fun findFirstPlayableResult(
+        root: AccessibilityNodeInfo?
+    ): AccessibilityNodeInfo? {
+        if (root == null) return null
+        return findFirstPlayableResultInternal(
+            root,
+            depth = 0
+        )
+    }
     private fun findFirstPlayableResultInternal(
         node: AccessibilityNodeInfo?,
         depth: Int
     ): AccessibilityNodeInfo? {
         if (node == null) return null
-        if (node.isEditable) return null 
-        val contentDesc = node.contentDescription?.toString()?.lowercase() ?: ""
-        val viewId = node.viewIdResourceName?.lowercase() ?: ""
-        val text = node.text?.toString()?.lowercase() ?: ""
-        val isSearchRelated = contentDesc.contains("search") || viewId.contains("search") || text.contains("search") || viewId.contains("toolbar") || viewId.contains("appbar")
-        if (node.isClickable && !isSearchRelated && depth > 1) {
-            if (contentDesc.isNotEmpty() || text.isNotEmpty()) {
-                Log.e("DEVICE_AUTOMATION", "Playable result candidate: desc='$contentDesc' text='$text' id='$viewId'")
+        if (node.isEditable) return null
+        val desc =node.contentDescription?.toString()?.lowercase()?: ""
+        val viewId =node.viewIdResourceName?.lowercase()?: ""
+        val text =node.text?.toString()?.lowercase()?: ""
+        val isSearchRelated =desc.contains("search") ||viewId.contains("search") ||text.contains("search") ||viewId.contains("toolbar") ||viewId.contains("appbar")
+        if (
+            node.isClickable &&
+            !isSearchRelated &&
+            depth > 1
+        ) {
+            if (
+                desc.isNotEmpty() ||
+                text.isNotEmpty()
+            ) {
+                Log.e(
+                    "Karen",
+                    "Playable result: desc='$desc' text='$text' id='$viewId'"
+                )
                 return node
             }
         }
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i)
-            val result = findFirstPlayableResultInternal(child, depth + 1)
-            if (result != null) return result
+        for (
+            i in 0 until rootChildCountSafe(node)
+        ) {
+            val result =
+                findFirstPlayableResultInternal(
+                    node.getChild(i),
+                    depth + 1
+                )
+            if (result != null) {
+                return result
+            }
         }
         return null
     }
-    fun click(node:AccessibilityNodeInfo?):Boolean{
-        if(node==null){
-            Log.e("DEVICE_AUTOMATION","NODE IS NULL")
+    private fun findScrollableNode(
+        root: AccessibilityNodeInfo?
+    ): AccessibilityNodeInfo? {
+        if (root == null) return null
+        if (root.isScrollable) {
+            return root
+        }
+        for (i in 0 until root.childCount) {
+            val result =
+                findScrollableNode(
+                    root.getChild(i)
+                )
+            if (result != null) {
+                return result
+            }
+        }
+        return null
+    }
+    private fun rootChildCountSafe(
+        node: AccessibilityNodeInfo
+    ): Int {
+        return try {
+            node.childCount
+        } catch (e: Exception) {
+            0
+        }
+    }
+    fun click(
+        node: AccessibilityNodeInfo?
+    ): Boolean {
+        if (node == null) {
+
+            Log.e(
+                "Karen",
+                "click: node is null"
+            )
+
             return false
         }
-        Log.e("DEVICE_AUTOMATION","CLICKING")
-        node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-        return true
+        Log.e(
+            "Karen",
+            "CLICKING node"
+        )
+        return node.performAction(
+            AccessibilityNodeInfo.ACTION_CLICK
+        )
     }
+    fun type(
+        node: AccessibilityNodeInfo?,
+        value: String
+    ): Boolean {
+        if (node == null) {
 
-    fun type(node:AccessibilityNodeInfo?,value:String):Boolean{
-        if(node==null){
-            Log.e("DEVICE_AUTOMATION","NODE IS NULL")
+            Log.e(
+                "Karen",
+                "type: node is null"
+            )
+
             return false
         }
-        Log.e("DEVICE_AUTOMATION","TYPING: $value")
-        val arguments = android.os.Bundle()
-        arguments.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value)
-        node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
-        return true
-    }
+        Log.e(
+            "Karen",
+            "TYPING: $value"
+        )
+        val arguments =
+            android.os.Bundle()
 
-    fun pressEnter(node: AccessibilityNodeInfo?): Boolean {
+        arguments.putCharSequence(
+            AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+            value
+        )
+        return node.performAction(
+            AccessibilityNodeInfo.ACTION_SET_TEXT,
+            arguments
+        )
+    }
+    fun pressEnterOnNode(
+        node: AccessibilityNodeInfo?
+    ): Boolean {
         if (node == null) return false
-        Log.e("DEVICE_AUTOMATION","PRESSING ENTER")
-        if (android.os.Build.VERSION.SDK_INT >= 30) {
-            val result = node.performAction(android.R.id.accessibilityActionImeEnter)
-            if (result) return true
+        Log.e(
+            "Karen",
+            "PRESSING ENTER"
+        )
+        if (
+            android.os.Build.VERSION.SDK_INT >= 30
+        ) {
+
+            val result =
+                node.performAction(
+                    android.R.id.accessibilityActionImeEnter
+                )
+
+            if (result) {
+                return true
+            }
         }
-        node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-        return true
-    }
-
-    override fun onInterrupt() {
-        Log.e("TEST","ACCESSIBILITY SERVICE INTERRUPTED")
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        instance = null
-        Log.e("TEST","ACCESSIBILITY SERVICE DESTROYED")
+        return node.performAction(
+            AccessibilityNodeInfo.ACTION_CLICK
+        )
     }
 }

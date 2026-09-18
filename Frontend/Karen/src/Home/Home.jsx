@@ -8,7 +8,7 @@ import ChatInput from '../Components/ChatInput';
 import axios from 'axios';
 import { AuthContext } from '../App';
 import { BACKEND_URI } from '@env';
-import action from '../services/actions';
+import executeActions from '../services/actions';
 const Home = () => {
   const [message, setmessage] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -69,15 +69,15 @@ const Home = () => {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setmessage((prev) => [...prev, aiMsg]);
-      if (res.data.parsedResponse && res.data.parsedResponse.type === 'action') {
-        const actionType = res.data.parsedResponse.function;
-        const parameter = res.data.parsedResponse.parameter;
-        const textToType = res.data.parsedResponse.textToType||'';
-        if (actionType && parameter) {
+      if (res.data.parsedResponse && res.data.parsedResponse.type === 'actions') {
+        const actions = res.data.parsedResponse.actions;
+        console.log('[Karen] Received actions:', actions);
+        if (Array.isArray(actions) && actions.length > 0) {
           try {
-            await action({ actionType, Name: parameter,textToType:textToType });
+            const success = await executeActions(actions);
+            console.log('[Karen] Action execution result:', success);
           } catch (err) {
-            console.log("Failed to execute action:", err);
+            console.log('[Karen] Failed to execute actions:', err);
           }
         }
       }
