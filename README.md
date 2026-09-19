@@ -16,11 +16,54 @@
 
 ## 📝 Description
 
-karen — a mobile app built with Android (Native), Express.js, Java (Gradle), JavaScript, Kotlin, MongoDB, Ruby, iOS (Native).
+# KAREN – AI Personal Assistant
+
+**KAREN** is an AI-powered personal assistant designed to understand natural-language commands and perform actions directly on an Android device. Instead of simply responding with text, KAREN can **understand a user's intent, generate an action plan, and execute tasks through Android accessibility services**.
+
+The system combines **AI-powered intent recognition with native Android automation**, allowing users to interact with their phone using simple conversational commands such as *“Open YouTube and search for DSA”* or *“Open WhatsApp.”*
+
+### Key Features
+
+* 🤖 **Natural Language Understanding** – Converts everyday user instructions into structured actions.
+* ⚡ **AI Action Planning** – Breaks complex commands into a sequence of executable steps.
+* 📱 **Android App Automation** – Opens and interacts with installed applications.
+* ♿ **Accessibility-Based Control** – Uses Android Accessibility Services to identify UI elements, click buttons, enter text, navigate screens, and perform actions.
+* 🎙️ **Voice Interaction** – Supports voice-based commands for hands-free interaction.
+* 🔄 **Multi-Step Task Execution** – Executes actions such as opening an app → finding an input field → entering text → pressing enter → selecting a result.
+* 🧠 **Context-Aware Execution** – Maintains the action sequence and handles delays between UI operations.
+* 💬 **Conversational Interface** – Provides users with feedback about what it is doing.
+
+### Technology Stack
+
+**Frontend:** React Native
+**Native Android:** Kotlin
+**AI:** LLM-based action planning
+**Automation:** Android Accessibility Service
+**Communication:** React Native Native Modules
+**Platform:** Android
+
+### Example
+
+**User:**
+
+> "Open YouTube and search for dynamic programming."
+
+**KAREN:**
+
+1. Opens YouTube
+2. Finds the search input
+3. Enters "dynamic programming"
+4. Presses Enter
+5. Selects the search result
+
+KAREN aims to bridge the gap between **AI conversation and real-world device control**, turning natural-language instructions into actual actions on an Android smartphone.
+
 
 ## 📸 Screenshots
 
-![LoginScreen](Frontend/Karen/src/assets/LoginScreen.png)
+![Uploading Screenshot_20260919-185648_Karen.jpg…]()
+<img width="1080" height="2340" alt="Screenshot_20260919-185228_Karen" src="https://github.com/user-attachments/assets/71708e92-57e2-49f1-817f-8b684144047d" />
+
 
 ## 🛠️ Tech Stack
 
