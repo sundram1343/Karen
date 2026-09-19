@@ -21,11 +21,17 @@ const executeAction = async (action) => {
   console.log('[Karen] Executing:',fn,args);
   switch (fn) {
     case 'open_app': {
-      const appName =args.appName ?? '';
+      const appName = args.appName ?? '';
       if (!appName) {
         throw new Error('open_app requires appName');
       }
-      await AppLauncher.openApp(appName);
+      if (typeof AppLauncher?.openApp !== 'function') {
+        throw new Error('AppLauncher.openApp is not available');
+      }
+      console.log('[Karen] Opening:', appName);
+      AppLauncher.openApp(appName);
+      await delay(1500);
+      console.log('[Karen] App opened:', appName);
       break;
     }
     case 'click_node': {

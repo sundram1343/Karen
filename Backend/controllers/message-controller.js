@@ -5,12 +5,8 @@ const path = require('path');
 const { message } = require('../config/groq-config');
 const sendmessage = async (req, res) => {
   try {
-    let {
-      usermessage,
-      chatid
-    } = req.body;
-    const userid =
-      req.user._id.toString();
+    let {usermessage,chatid} = req.body;
+    const userid =req.user._id.toString();
     if (!usermessage && !req.file) {
       return res.status(400).json({
         message: 'Message content or file is required'
@@ -24,38 +20,11 @@ const sendmessage = async (req, res) => {
           : usermessage.substring(0, 20),
       });
       chatid = chat._id;
-      await User.findByIdAndUpdate(
-        userid,
-        {
-          $push: {
-            chats: chatid
-          }
-        }
-      );
+      await User.findByIdAndUpdate(userid,{$push: {chats: chatid}});
     }
-    const filepath =
-      req.file
-        ? path.join(
-            __dirname,
-            '..',
-            'uploads',
-            userid,
-            req.file.filename
-          )
-        : null;
-    const parsedResponse =
-      await message(
-        usermessage || '',
-        filepath
-      );
-    console.log(
-      "KAREN PARSED RESPONSE:",
-      JSON.stringify(
-        parsedResponse,
-        null,
-        2
-      )
-    );
+    const filepath = req.file? path.join(__dirname,'..','uploads',userid,req.file.filename): null;
+    const parsedResponse =await message(usermessage || '',filepath);
+    console.log("KAREN PARSED RESPONSE:",JSON.stringify(parsedResponse,null,2));
     const newusermessage =
       await Message.create({
         chat: chatid,
@@ -71,15 +40,11 @@ const sendmessage = async (req, res) => {
         sender: 'user',
       });
     let aiContent = '';
-    if (
-      parsedResponse &&
-      parsedResponse.type === 'actions'
-    ) {
+    if (parsedResponse &&parsedResponse.type === 'actions') {
       aiContent ='Executing your request...';
     } else {
-      aiContent =
-        parsedResponse?.response ||
-        'Sorry, I could not process your request.';
+      console.log("KAREN RESPONSE:",parsedResponse.response);
+      aiContent =parsedResponse?.response ||'Sorry, I could not process your request.';
     }
     const newAImessage =
       await Message.create({
