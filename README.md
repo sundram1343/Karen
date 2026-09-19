@@ -61,7 +61,7 @@ KAREN aims to bridge the gap between **AI conversation and real-world device con
 
 ## 📸 Screenshots
 
-<img width="90" height="170" alt="Screenshot_20260919-185228_Karen" src="https://github.com/user-attachments/assets/71708e92-57e2-49f1-817f-8b684144047d" />
+<img width="250" height="500" alt="Screenshot_20260919-185228_Karen" src="https://github.com/user-attachments/assets/71708e92-57e2-49f1-817f-8b684144047d" />
 
 
 ## 🛠️ Tech Stack
